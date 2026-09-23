@@ -299,7 +299,7 @@ function NewOptimizationView({ formData, handleInputChange, runMathematicalOptim
                   : 'bg-red-900/60 border border-red-500 text-red-200 cursor-not-allowed'
               }`}
             >
-              {isFormValid ? "Optimize Now ✨" : "🔒 Locked: Piece Exceeds Sheet Size"}
+              {isFormValid ? "Optimize Today ✨" : "🔒 Locked: Piece Exceeds Sheet Size"}
             </button>
           </div>
         </div>
@@ -484,7 +484,7 @@ function SettingsView() {
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
         <div className="flex items-center justify-between py-2 border-b border-gray-800">
           <div>
-            <p className="font-semibold text-white">Deterministic Bin-Packing Engine</p>
+            <p className="p-semibold text-white">Deterministic Bin-Packing Engine</p>
             <p className="text-xs text-gray-400">Strict mathematical validation and multi-sheet coordinate calculation.</p>
           </div>
           <input type="checkbox" defaultChecked className="w-5 h-5 accent-emerald-500 cursor-pointer" />
