@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, PlusCircle, FileText, User, Settings, LogOut, Download, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, FileText, User, Settings, LogOut, Download, ArrowRight, AlertTriangle, CheckCircle } from 'lucide-react';
 
 export default function CutMindApp() {
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  // Real-time application form state
   const [formData, setFormData] = useState({
     paperWidth: 1000,
     paperHeight: 700,
@@ -16,35 +15,135 @@ export default function CutMindApp() {
     margin: 5
   });
 
-  // Optimization Result State
-  const [resultData, setResultData] = useState(null);
+  const [optimizationResult, setOptimizationResult] = useState(null);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : Number(value)
+      [name]: type === 'checkbox' ? checked : (value === '' ? '' : Number(value))
     }));
   };
 
-  const runOptimization = () => {
-    // Real calculation logic based on user inputs
-    const sheetArea = formData.paperWidth * formData.paperHeight;
-    const pieceArea = formData.pieceWidth * formData.pieceHeight;
-    const maxPossiblePieces = Math.floor(sheetArea / pieceArea);
-    const totalPiecesNeeded = formData.quantity;
-    
-    const placedPieces = Math.min(totalPiecesNeeded, maxPossiblePieces);
-    const usedArea = placedPieces * pieceArea;
-    const materialUsedPct = Math.min(100, Number(((usedArea / sheetArea) * 100).toFixed(1)));
-    const wastePct = Number((100 - materialUsedPct).toFixed(1));
+  const isInputInvalid = 
+    formData.paperWidth === '' || formData.paperWidth <= 0 ||
+    formData.paperHeight === '' || formData.paperHeight <= 0 ||
+    formData.pieceWidth === '' || formData.pieceWidth <= 0 ||
+    formData.pieceHeight === '' || formData.pieceHeight <= 0 ||
+    formData.quantity === '' || formData.quantity <= 0 ||
+    formData.paperThickness === '' || formData.paperThickness <= 0 ||
+    formData.margin === '' || formData.margin < 0;
 
-    setResultData({
-      ...formData,
-      totalPieces: placedPieces,
-      materialUsed: materialUsedPct,
-      waste: wastePct,
-      efficiency: materialUsedPct
+  const usableWidth = Number(formData.paperWidth || 0) - (2 * Number(formData.margin || 0));
+  const usableHeight = Number(formData.paperHeight || 0) - (2 * Number(formData.margin || 0));
+
+  const isUsableValid = usableWidth > 0 && usableHeight > 0;
+
+  const normalFit = isUsableValid && (usableWidth >= Number(formData.pieceWidth)) && (usableHeight >= Number(formData.pieceHeight));
+  const rotatedFit = isUsableValid && formData.allowRotation && (usableWidth >= Number(formData.pieceHeight)) && (usableHeight >= Number(formData.pieceWidth));
+  const canFitAtLeastOne = normalFit || rotatedFit;
+
+  const isFormValid = !isInputInvalid && isUsableValid && canFitAtLeastOne;
+
+  const runMathematicalOptimization = () => {
+    if (!isFormValid) return;
+
+    const { paperWidth, paperHeight, pieceWidth, pieceHeight, quantity, allowRotation, margin } = formData;
+    const effectiveW = paperWidth - (2 * margin);
+    const effectiveH = paperHeight - (2 * margin);
+
+    const fitNormalCols = Math.floor(effectiveW / pieceWidth);
+    const fitNormalRows = Math.floor(effectiveH / pieceHeight);
+    const countNormal = fitNormalCols * fitNormalRows;
+
+    let fitRotatedCols = 0;
+    let fitRotatedRows = 0;
+    let countRotated = 0;
+
+    if (allowRotation) {
+      const fitRotatedCols1 = Math.floor(effectiveW / pieceHeight);
+      const fitRotatedRows1 = Math.floor(effectiveH / pieceWidth);
+      const count1 = fitRotatedCols1 * fitRotatedRows1;
+
+      if (count1 > countNormal) {
+        fitRotatedCols = fitRotatedCols1;
+        fitRotatedRows = fitRotatedRows1;
+        countRotated = count1;
+      }
+    }
+
+    const useRotation = allowRotation && countRotated > countNormal;
+    const piecesPerSheet = useRotation ? countRotated : countNormal;
+
+    if (piecesPerSheet <= 0) return;
+
+    const cols = useRotation ? fitRotatedCols : fitNormalCols;
+    const rows = useRotation ? fitRotatedRows : fitNormalRows;
+    const pWidth = useRotation ? pieceHeight : pieceWidth;
+    const pHeight = useRotation ? pieceWidth : pieceHeight;
+
+    const totalSheetsNeeded = Math.ceil(quantity / piecesPerSheet);
+    const sheets = [];
+    let remainingPiecesToAllocate = quantity;
+
+    for (let s = 0; s < totalSheetsNeeded; s++) {
+      const piecesOnThisSheet = Math.min(piecesPerSheet, remainingPiecesToAllocate);
+      const sheetRectangles = [];
+
+      let currentX = margin;
+      let currentY = margin;
+      let placedInSheet = 0;
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          if (placedInSheet >= piecesOnThisSheet) break;
+
+          sheetRectangles.push({
+            id: remainingPiecesToAllocate - piecesOnThisSheet + placedInSheet + 1,
+            x: currentX,
+            y: currentY,
+            width: pWidth,
+            height: pHeight,
+            rotated: useRotation,
+            sheetIndex: s + 1
+          });
+
+          currentX += pWidth + margin;
+          placedInSheet++;
+        }
+        currentX = margin;
+        currentY += pHeight + margin;
+        if (placedInSheet >= piecesOnThisSheet) break;
+      }
+
+      const totalPaperArea = paperWidth * paperHeight;
+      const occupiedAreaPerPiece = pieceWidth * pieceHeight;
+      const totalOccupiedArea = piecesOnThisSheet * occupiedAreaPerPiece;
+      const utilizationPct = Number(((totalOccupiedArea / totalPaperArea) * 100).toFixed(2));
+      const wastePct = Number((100 - utilizationPct).toFixed(2));
+
+      sheets.push({
+        sheetIndex: s + 1,
+        piecesCount: piecesOnThisSheet,
+        rectangles: sheetRectangles,
+        utilization: utilizationPct,
+        waste: wastePct
+      });
+
+      remainingPiecesToAllocate -= piecesOnThisSheet;
+    }
+
+    setOptimizationResult({
+      paperWidth,
+      paperHeight,
+      pieceWidth,
+      pieceHeight,
+      quantity,
+      margin,
+      allowRotation,
+      piecesPerSheet,
+      totalSheets: totalSheetsNeeded,
+      sheets
     });
 
     setActiveTab('result');
@@ -52,12 +151,11 @@ export default function CutMindApp() {
 
   return (
     <div className="flex h-screen bg-gray-950 text-gray-100 font-sans">
-      {/* Sidebar Navigation */}
       <aside className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col justify-between p-4">
         <div>
           <div className="flex items-center gap-3 px-2 mb-8">
             <div className="bg-emerald-500 p-2 rounded-lg text-black font-bold">✂️</div>
-            <span className="text-xl font-bold tracking-wide text-white">CutMind <span className="text-emerald-400">AI</span></span>
+            <span className="text-xl font-bold tracking-wide text-white">CutMind <span className="text-emerald-400">AI</span> (v2.1 Strict)</span>
           </div>
           
           <nav className="space-y-1">
@@ -71,20 +169,14 @@ export default function CutMindApp() {
         </div>
 
         <div>
-          <SidebarItem 
-            icon={<LogOut size={18} />} 
-            label="Logout" 
-            active={false} 
-            onClick={() => alert("Logged out successfully! Redirecting to login...")} 
-          />
+          <SidebarItem icon={<LogOut size={18} />} label="Logout" active={false} onClick={() => alert("Logged out securely.")} />
         </div>
       </aside>
 
-      {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto p-8">
         {activeTab === 'dashboard' && <DashboardView setActiveTab={setActiveTab} />}
-        {activeTab === 'new' && <NewOptimizationView formData={formData} handleInputChange={handleInputChange} runOptimization={runOptimization} />}
-        {activeTab === 'result' && <ResultView resultData={resultData} setActiveTab={setActiveTab} />}
+        {activeTab === 'new' && <NewOptimizationView formData={formData} handleInputChange={handleInputChange} runMathematicalOptimization={runMathematicalOptimization} isFormValid={isFormValid} canFitAtLeastOne={canFitAtLeastOne} isUsableValid={isUsableValid} />}
+        {activeTab === 'result' && <ResultView optimizationResult={optimizationResult} setActiveTab={setActiveTab} />}
         {activeTab === 'reports' && <ReportsView />}
         {activeTab === 'profile' && <ProfileView />}
         {activeTab === 'settings' && <SettingsView />}
@@ -95,12 +187,7 @@ export default function CutMindApp() {
 
 function SidebarItem({ icon, label, active, onClick }) {
   return (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
-        active ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-      }`}
-    >
+    <button onClick={onClick} className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-medium transition-colors ${active ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}>
       {icon}
       <span>{label}</span>
     </button>
@@ -113,51 +200,17 @@ function DashboardView({ setActiveTab }) {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-gray-400 text-sm">Welcome back, Ace! AI Paper Cutting Optimization System</p>
+          <p className="text-gray-400 text-sm">AI-Based Sheet Cutting & Material Optimization System</p>
         </div>
-        <button 
-          onClick={() => setActiveTab('new')}
-          className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-semibold text-sm flex items-center gap-2 shadow-lg shadow-emerald-900/20"
-        >
+        <button onClick={() => setActiveTab('new')} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-semibold text-sm flex items-center gap-2 cursor-pointer">
           <PlusCircle size={16} /> New Optimization
         </button>
       </div>
-
       <div className="grid grid-cols-4 gap-4">
-        <MetricCard title="Total Orders" value="25" />
-        <MetricCard title="Paper Used" value="1250 m²" />
-        <MetricCard title="Paper Saved" value="185 m²" />
-        <MetricCard title="Waste Percentage" value="12.8%" sub="Optimized by AI" positive />
-      </div>
-
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-        <h3 className="text-lg font-semibold mb-4">Recent Optimizations & Manufacturing Efficiency</h3>
-        <table className="w-full text-left text-sm text-gray-300">
-          <thead className="border-b border-gray-800 text-gray-400">
-            <tr>
-              <th className="pb-3">ID</th>
-              <th className="pb-3">Paper Size (mm)</th>
-              <th className="pb-3">Pieces</th>
-              <th className="pb-3">Waste %</th>
-              <th className="pb-3">Date</th>
-              <th className="pb-3">Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-800">
-            <tr>
-              <td className="py-3 font-medium text-white">#25</td>
-              <td className="py-3">1000 x 700</td>
-              <td className="py-3">20</td>
-              <td className="py-3 text-emerald-400">5.2%</td>
-              <td className="py-3">03 May 2024</td>
-              <td className="py-3">
-                <button onClick={() => setActiveTab('result')} className="text-emerald-400 hover:underline flex items-center gap-1 text-xs font-semibold">
-                  View <ArrowRight size={14} />
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <MetricCard title="Total Orders" value="26" />
+        <MetricCard title="Paper Used" value="1,280 m²" />
+        <MetricCard title="Paper Saved" value="194 m²" />
+        <MetricCard title="Waste Percentage" value="11.4%" sub="Rigid Mathematical Heuristic" positive />
       </div>
     </div>
   );
@@ -173,10 +226,10 @@ function MetricCard({ title, value, sub, positive }) {
   );
 }
 
-function NewOptimizationView({ formData, handleInputChange, runOptimization }) {
+function NewOptimizationView({ formData, handleInputChange, runMathematicalOptimization, isFormValid, canFitAtLeastOne, isUsableValid }) {
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">New Optimization</h1>
+    <div className="space-y-6 max-w-5xl">
+      <h1 className="text-2xl font-bold">New Optimization (Strict Validation v2.1)</h1>
       
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 grid grid-cols-3 gap-6">
         <div className="space-y-4">
@@ -206,90 +259,177 @@ function NewOptimizationView({ formData, handleInputChange, runOptimization }) {
             <input type="number" name="pieceHeight" value={formData.pieceHeight} onChange={handleInputChange} className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-emerald-500" />
           </div>
           <div>
-            <label className="text-xs text-gray-400 block mb-1">Quantity (Pieces)</label>
+            <label className="text-xs text-gray-400 block mb-1">Exact Quantity Required</label>
             <input type="number" name="quantity" value={formData.quantity} onChange={handleInputChange} className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-emerald-500" />
           </div>
         </div>
 
         <div className="space-y-4">
-          <h3 className="font-semibold text-emerald-400">Options & Eco-Settings</h3>
+          <h3 className="font-semibold text-emerald-400">Constraints & Margins</h3>
           <div className="flex items-center justify-between py-2">
-            <span className="text-sm text-gray-300">Allow Rotation</span>
+            <span className="text-sm text-gray-300">Allow Rotation (90°)</span>
             <input type="checkbox" name="allowRotation" checked={formData.allowRotation} onChange={handleInputChange} className="w-5 h-5 accent-emerald-500 cursor-pointer" />
           </div>
           <div className="flex items-center justify-between py-2">
             <span className="text-sm text-gray-300">Cutting Margin (mm)</span>
             <input type="number" name="margin" value={formData.margin} onChange={handleInputChange} className="w-20 bg-gray-950 border border-gray-800 rounded-xl px-3 py-1 text-white text-center focus:outline-none focus:border-emerald-500" />
           </div>
-          <button 
-            onClick={runOptimization}
-            className="w-full mt-6 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl transition-all shadow-lg shadow-emerald-900/20 cursor-pointer"
-          >
-            Optimize Now ✨
-          </button>
+
+          <div className="pt-2">
+            {!isUsableValid ? (
+              <div className="flex items-center gap-2 text-xs text-red-400 bg-red-950/40 p-2.5 rounded-xl border border-red-500/30 mb-4">
+                <AlertTriangle size={15} /> 🔒 LOCKED: Margin is too large!
+              </div>
+            ) : !canFitAtLeastOne ? (
+              <div className="flex items-center gap-2 text-xs text-red-400 bg-red-950/40 p-2.5 rounded-xl border border-red-500/30 mb-4">
+                <AlertTriangle size={15} /> 🔒 LOCKED: Piece exceeds sheet size!
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-500/30 mb-4">
+                <CheckCircle size={15} /> ✨ ENABLED: Ready for multi-sheet layout!
+              </div>
+            )}
+
+            <button 
+              onClick={runMathematicalOptimization}
+              disabled={!isFormValid}
+              className={`w-full py-3 rounded-xl font-semibold transition-all shadow-lg ${
+                isFormValid 
+                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20 cursor-pointer' 
+                  : 'bg-red-900/60 border border-red-500 text-red-200 cursor-not-allowed'
+              }`}
+            >
+              {isFormValid ? "Optimize Today ✨" : "🔒 Locked: Piece Exceeds Sheet Size"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function ResultView({ resultData, setActiveTab }) {
-  const data = resultData || {
-    paperWidth: 1000, paperHeight: 700, totalPieces: 20, materialUsed: 95.0, waste: 5.0, efficiency: 95.0
+function ResultView({ optimizationResult, setActiveTab }) {
+  const [activeSheetTab, setActiveSheetTab] = useState(0);
+
+  const result = optimizationResult || {
+    paperWidth: 1000, paperHeight: 700, pieceWidth: 200, pieceHeight: 150, quantity: 20, margin: 5,
+    totalSheets: 1,
+    sheets: [{
+      sheetIndex: 1,
+      piecesCount: 20,
+      utilization: 85.71,
+      waste: 14.29,
+      rectangles: [...Array(20)].map((_, i) => ({ id: i+1, x: 5 + (i%5)*200, y: 5 + Math.floor(i/5)*150, width: 200, height: 150, sheetIndex: 1 }))
+    }]
   };
+
+  const currentSheet = result.sheets[activeSheetTab] || result.sheets[0];
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">Optimization Result</h1>
-          <p className="text-gray-400 text-sm">Showing calculated layout for sheet size: {data.paperWidth}mm x {data.paperHeight}mm</p>
+          <h1 className="text-2xl font-bold">Exact Optimization Result</h1>
+          <p className="text-gray-400 text-sm">
+            Master Sheet: {result.paperWidth} × {result.paperHeight} mm | Requested Quantity: {result.quantity} Pieces | Total Sheets: {result.totalSheets}
+          </p>
         </div>
         <div className="flex gap-3">
-          <button onClick={() => setActiveTab('new')} className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-xl font-semibold text-sm">
+          <button onClick={() => setActiveTab('new')} className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-xl font-semibold text-sm cursor-pointer">
             Modify Inputs
           </button>
-          <button onClick={() => alert("Downloading PDF Report...")} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-semibold text-sm flex items-center gap-2">
-            <Download size={16} /> Download PDF
+          <button onClick={() => alert("Downloading PDF Report...")} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-semibold text-sm flex items-center gap-2 cursor-pointer">
+            <Download size={16} /> Download PDF Report
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
-          <h3 className="font-semibold text-emerald-400">AI Layout Performance Metrics</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-gray-950 p-4 rounded-xl border border-gray-800">
-              <p className="text-xs text-gray-400">Total Pieces Placed</p>
-              <p className="text-2xl font-bold text-white mt-1">{data.totalPieces}</p>
+      <div className="grid grid-cols-3 gap-6">
+        <div className="space-y-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
+            <h3 className="font-semibold text-emerald-400">Mathematical Summary</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-gray-950 p-3 rounded-xl border border-gray-800">
+                <p className="text-xs text-gray-400">Required Pieces</p>
+                <p className="text-xl font-bold text-white mt-1">{result.quantity}</p>
+              </div>
+              <div className="bg-gray-950 p-3 rounded-xl border border-gray-800">
+                <p className="text-xs text-gray-400">Sheets Required</p>
+                <p className="text-xl font-bold text-emerald-400 mt-1">{result.totalSheets}</p>
+              </div>
+              <div className="bg-gray-950 p-3 rounded-xl border border-gray-800">
+                <p className="text-xs text-gray-400">Sheet Utilization</p>
+                <p className="text-xl font-bold text-emerald-400 mt-1">{currentSheet.utilization}%</p>
+              </div>
+              <div className="bg-gray-950 p-3 rounded-xl border border-gray-800">
+                <p className="text-xs text-gray-400">Sheet Waste Area</p>
+                <p className="text-xl font-bold text-red-400 mt-1">{currentSheet.waste}%</p>
+              </div>
             </div>
-            <div className="bg-gray-950 p-4 rounded-xl border border-gray-800">
-              <p className="text-xs text-gray-400">Material Utilization</p>
-              <p className="text-2xl font-bold text-emerald-400 mt-1">{data.materialUsed}%</p>
-            </div>
-            <div className="bg-gray-950 p-4 rounded-xl border border-gray-800">
-              <p className="text-xs text-gray-400">Waste Percentage</p>
-              <p className="text-2xl font-bold text-red-400 mt-1">{data.waste}%</p>
-            </div>
-            <div className="bg-gray-950 p-4 rounded-xl border border-gray-800">
-              <p className="text-xs text-gray-400">Cutting Efficiency</p>
-              <p className="text-2xl font-bold text-white mt-1">{data.efficiency}%</p>
+          </div>
+
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-3">
+            <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Select Sheet Layout</h4>
+            <div className="flex flex-wrap gap-2">
+              {result.sheets.map((sh, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveSheetTab(idx)}
+                  className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                    activeSheetTab === idx 
+                      ? 'bg-emerald-600 text-white shadow-md' 
+                      : 'bg-gray-950 text-gray-300 border border-gray-800 hover:bg-gray-800'
+                  }`}
+                >
+                  Sheet #{sh.sheetIndex} ({sh.piecesCount} pcs)
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-          <h3 className="font-semibold text-emerald-400 mb-4">Cutting Layout Preview</h3>
-          <div className="bg-emerald-950/40 border border-emerald-500/40 rounded-xl p-4 grid grid-cols-5 gap-2 h-60 items-center text-center overflow-y-auto">
-            {[...Array(Number(data.totalPieces) || 1)].map((_, i) => (
-              <div key={i} className="bg-emerald-600/30 border border-emerald-400 text-emerald-200 text-xs font-semibold py-3 rounded">
-                Piece {i + 1}
-              </div>
-            ))}
+        <div className="col-span-2 bg-gray-900 border border-gray-800 rounded-2xl p-6 flex flex-col">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-semibold text-emerald-400">
+              Proportional Cutting Layout — Sheet #{currentSheet.sheetIndex} ({currentSheet.piecesCount} Pieces)
+            </h3>
+            <span className="text-xs text-gray-400">Master: {result.paperWidth} × {result.paperHeight} mm</span>
           </div>
-          <div className="flex gap-4 mt-4 text-xs text-gray-400">
-            <span className="flex items-center gap-1"><span className="w-3 h-3 bg-emerald-600 inline-block rounded"></span> Usable Area</span>
-            <span className="flex items-center gap-1"><span className="w-3 h-3 bg-red-950 border border-red-500 inline-block rounded"></span> Eco-Waste Area ({data.waste}%)</span>
+
+          <div className="flex-1 bg-gray-950 border border-gray-800 rounded-xl relative p-4 flex items-center justify-center min-h-[380px] overflow-hidden">
+            <div 
+              className="relative bg-emerald-950/30 border-2 border-emerald-500/60 rounded-lg shadow-inner"
+              style={{
+                width: '100%',
+                maxWidth: '460px',
+                aspectRatio: `${result.paperWidth} / ${result.paperHeight}`,
+                maxHeight: '340px'
+              }}
+            >
+              {currentSheet.rectangles.map((rect, idx) => {
+                const leftPct = (rect.x / result.paperWidth) * 100;
+                const topPct = (rect.y / result.paperHeight) * 100;
+                const widthPct = (rect.width / result.paperWidth) * 100;
+                const heightPct = (rect.height / result.paperHeight) * 100;
+
+                return (
+                  <div
+                    key={idx}
+                    className="absolute bg-emerald-600/40 border border-emerald-400 text-emerald-100 text-[10px] font-bold flex flex-col items-center justify-center rounded transition-all hover:bg-emerald-500/60"
+                    style={{
+                      left: `${leftPct}%`,
+                      top: `${topPct}%`,
+                      width: `${widthPct}%`,
+                      height: `${heightPct}%`,
+                    }}
+                    title={`Piece #${rect.id} (${rect.width}×${rect.height}mm) at X:${rect.x}, Y:${rect.y}`}
+                  >
+                    <span>#{rect.id}</span>
+                    <span className="text-[8px] text-emerald-300 opacity-80">{rect.width}×{rect.height}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
@@ -299,14 +439,14 @@ function ResultView({ resultData, setActiveTab }) {
 
 function ReportsView() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl">
       <h1 className="text-2xl font-bold">Reports Archive</h1>
-      <p className="text-gray-400 text-sm">Review historical manufacturing optimization logs and eco-savings reports.</p>
+      <p className="text-gray-400 text-sm">Archived historical manufacturing optimization logs and material efficiency certificates.</p>
       <div className="space-y-3">
-        {['#25 - 03 May 2024 (5.2% Waste)', '#24 - 02 May 2024 (8.7% Waste)', '#23 - 01 May 2024 (6.1% Waste)'].map((report, idx) => (
+        {['#26 - 1000x700mm (5.71% Waste - 1 Sheet)', '#25 - 1200x800mm (8.40% Waste - 2 Sheets)'].map((report, idx) => (
           <div key={idx} className="bg-gray-900 border border-gray-800 p-4 rounded-xl flex justify-between items-center">
             <span className="font-semibold text-white">Optimization Report {report}</span>
-            <button onClick={() => alert(`Downloading report ${report}`)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 cursor-pointer">
+            <button onClick={() => alert(`Downloading verified report...`)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 cursor-pointer">
               <Download size={14} /> Download PDF
             </button>
           </div>
@@ -323,15 +463,11 @@ function ProfileView() {
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
         <div>
           <label className="text-xs text-gray-400 block mb-1">Full Name</label>
-          <input type="text" defaultValue="Ace User" className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-emerald-500" />
+          <input type="text" defaultValue="Ankit Chhipa" className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-emerald-500" />
         </div>
         <div>
-          <label className="text-xs text-gray-400 block mb-1">Email Address</label>
-          <input type="email" defaultValue="ace@cutmindai.com" className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-emerald-500" />
-        </div>
-        <div>
-          <label className="text-xs text-gray-400 block mb-1">Manufacturing Unit / Organization</label>
-          <input type="text" defaultValue="AR Electro Projects & Paper Units" className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-emerald-500" />
+          <label className="text-xs text-gray-400 block mb-1">Organization / Manufacturing Unit</label>
+          <input type="text" defaultValue="AR Electro Projects" className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-emerald-500" />
         </div>
         <button onClick={() => alert("Profile updated successfully!")} className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-xl font-semibold text-sm cursor-pointer">
           Save Changes
@@ -348,15 +484,8 @@ function SettingsView() {
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
         <div className="flex items-center justify-between py-2 border-b border-gray-800">
           <div>
-            <p className="font-semibold text-white">AI Auto-Optimization Engine</p>
-            <p className="text-xs text-gray-400">Automatically recalculate waste reduction heuristics on input changes.</p>
-          </div>
-          <input type="checkbox" defaultChecked className="w-5 h-5 accent-emerald-500 cursor-pointer" />
-        </div>
-        <div className="flex items-center justify-between py-2 border-b border-gray-800">
-          <div>
-            <p className="font-semibold text-white">Eco-Friendly Manufacturing Mode</p>
-            <p className="text-xs text-gray-400">Prioritize minimal carbon footprint and material savings.</p>
+            <p className="font-semibold text-white">Deterministic Bin-Packing Engine</p>
+            <p className="text-xs text-gray-400">Strict mathematical validation and multi-sheet coordinate calculation.</p>
           </div>
           <input type="checkbox" defaultChecked className="w-5 h-5 accent-emerald-500 cursor-pointer" />
         </div>
