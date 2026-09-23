@@ -25,7 +25,6 @@ export default function CutMindApp() {
     }));
   };
 
-  // Strict Validation Logic as specified
   const isInputInvalid = 
     formData.paperWidth === '' || formData.paperWidth <= 0 ||
     formData.paperHeight === '' || formData.paperHeight <= 0 ||
@@ -83,7 +82,6 @@ export default function CutMindApp() {
     const pWidth = useRotation ? pieceHeight : pieceWidth;
     const pHeight = useRotation ? pieceWidth : pieceHeight;
 
-    // Multiple sheets calculation for large quantities
     const totalSheetsNeeded = Math.ceil(quantity / piecesPerSheet);
     const sheets = [];
     let remainingPiecesToAllocate = quantity;
@@ -157,7 +155,7 @@ export default function CutMindApp() {
         <div>
           <div className="flex items-center gap-3 px-2 mb-8">
             <div className="bg-emerald-500 p-2 rounded-lg text-black font-bold">✂️</div>
-            <span className="text-xl font-bold tracking-wide text-white">CutMind <span className="text-emerald-400">AI</span></span>
+            <span className="text-xl font-bold tracking-wide text-white">CutMind <span className="text-emerald-400">AI</span> (v2.1 Strict)</span>
           </div>
           
           <nav className="space-y-1">
@@ -231,7 +229,7 @@ function MetricCard({ title, value, sub, positive }) {
 function NewOptimizationView({ formData, handleInputChange, runMathematicalOptimization, isFormValid, canFitAtLeastOne, isUsableValid }) {
   return (
     <div className="space-y-6 max-w-5xl">
-      <h1 className="text-2xl font-bold">New Optimization</h1>
+      <h1 className="text-2xl font-bold">New Optimization (Strict Validation v2.1)</h1>
       
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 grid grid-cols-3 gap-6">
         <div className="space-y-4">
@@ -284,7 +282,7 @@ function NewOptimizationView({ formData, handleInputChange, runMathematicalOptim
               </div>
             ) : !canFitAtLeastOne ? (
               <div className="flex items-center gap-2 text-xs text-red-400 bg-red-950/40 p-2.5 rounded-xl border border-red-500/30 mb-4">
-                <AlertTriangle size={15} /> 🔒 LOCKED: Piece too large for sheet!
+                <AlertTriangle size={15} /> 🔒 LOCKED: Piece exceeds sheet size!
               </div>
             ) : (
               <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-500/30 mb-4">
@@ -298,10 +296,10 @@ function NewOptimizationView({ formData, handleInputChange, runMathematicalOptim
               className={`w-full py-3 rounded-xl font-semibold transition-all shadow-lg ${
                 isFormValid 
                   ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20 cursor-pointer' 
-                  : 'bg-gray-800 text-gray-500 cursor-not-allowed opacity-50'
+                  : 'bg-red-900/60 border border-red-500 text-red-200 cursor-not-allowed'
               }`}
             >
-              {isFormValid ? "Optimize Now ✨" : "Locked (Invalid Inputs) 🔒"}
+              {isFormValid ? "Optimize Now ✨" : "🔒 Locked: Piece Exceeds Sheet Size"}
             </button>
           </div>
         </div>
