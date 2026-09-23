@@ -4,7 +4,6 @@ import { LayoutDashboard, PlusCircle, FileText, User, Settings, LogOut, Download
 export default function CutMindApp() {
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  // Form input state matching real physical parameters
   const [formData, setFormData] = useState({
     paperWidth: 1000,
     paperHeight: 700,
@@ -16,43 +15,55 @@ export default function CutMindApp() {
     margin: 5
   });
 
-  // Detailed optimization result state containing multi-sheet coordinate data
   const [optimizationResult, setOptimizationResult] = useState(null);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : Number(value)
+      [name]: type === 'checkbox' ? checked : (value === '' ? '' : Number(value))
     }));
   };
 
-  // Mathematical 2D Guillotine / Shelf Bin-Packing Optimization Engine
+  // Strict Validation Logic as specified
+  const isInputInvalid = 
+    formData.paperWidth === '' || formData.paperWidth <= 0 ||
+    formData.paperHeight === '' || formData.paperHeight <= 0 ||
+    formData.pieceWidth === '' || formData.pieceWidth <= 0 ||
+    formData.pieceHeight === '' || formData.pieceHeight <= 0 ||
+    formData.quantity === '' || formData.quantity <= 0 ||
+    formData.paperThickness === '' || formData.paperThickness <= 0 ||
+    formData.margin === '' || formData.margin < 0;
+
+  const usableWidth = Number(formData.paperWidth || 0) - (2 * Number(formData.margin || 0));
+  const usableHeight = Number(formData.paperHeight || 0) - (2 * Number(formData.margin || 0));
+
+  const isUsableValid = usableWidth > 0 && usableHeight > 0;
+
+  const normalFit = isUsableValid && (usableWidth >= Number(formData.pieceWidth)) && (usableHeight >= Number(formData.pieceHeight));
+  const rotatedFit = isUsableValid && formData.allowRotation && (usableWidth >= Number(formData.pieceHeight)) && (usableHeight >= Number(formData.pieceWidth));
+  const canFitAtLeastOne = normalFit || rotatedFit;
+
+  const isFormValid = !isInputInvalid && isUsableValid && canFitAtLeastOne;
+
   const runMathematicalOptimization = () => {
+    if (!isFormValid) return;
+
     const { paperWidth, paperHeight, pieceWidth, pieceHeight, quantity, allowRotation, margin } = formData;
+    const effectiveW = paperWidth - (2 * margin);
+    const effectiveH = paperHeight - (2 * margin);
 
-    // Effective usable area per sheet after margins
-    const effectiveSheetW = paperWidth - (2 * margin);
-    const effectiveSheetH = paperHeight - (2 * margin);
-
-    if (effectiveSheetW <= 0 || effectiveSheetH <= 0) {
-      alert("Error: Cutting margin is too large for the specified paper dimensions.");
-      return;
-    }
-
-    // Evaluate orientation 1: Normal
-    const fitNormalCols = Math.floor(effectiveSheetW / pieceWidth);
-    const fitNormalRows = Math.floor(effectiveSheetH / pieceHeight);
+    const fitNormalCols = Math.floor(effectiveW / pieceWidth);
+    const fitNormalRows = Math.floor(effectiveH / pieceHeight);
     const countNormal = fitNormalCols * fitNormalRows;
 
-    // Evaluate orientation 2: Rotated (if allowed)
     let fitRotatedCols = 0;
     let fitRotatedRows = 0;
     let countRotated = 0;
 
     if (allowRotation) {
-      const fitRotatedCols1 = Math.floor(effectiveSheetW / pieceHeight);
-      const fitRotatedRows1 = Math.floor(effectiveSheetH / pieceWidth);
+      const fitRotatedCols1 = Math.floor(effectiveW / pieceHeight);
+      const fitRotatedRows1 = Math.floor(effectiveH / pieceWidth);
       const count1 = fitRotatedCols1 * fitRotatedRows1;
 
       if (count1 > countNormal) {
@@ -65,17 +76,14 @@ export default function CutMindApp() {
     const useRotation = allowRotation && countRotated > countNormal;
     const piecesPerSheet = useRotation ? countRotated : countNormal;
 
-    if (piecesPerSheet <= 0) {
-      alert("Validation Failed: The specified piece dimensions (plus margins) are too large to fit on the master sheet in any allowed orientation.");
-      return;
-    }
+    if (piecesPerSheet <= 0) return;
 
     const cols = useRotation ? fitRotatedCols : fitNormalCols;
     const rows = useRotation ? fitRotatedRows : fitNormalRows;
     const pWidth = useRotation ? pieceHeight : pieceWidth;
     const pHeight = useRotation ? pieceWidth : pieceHeight;
 
-    // Calculate exact sheets required for exact quantity
+    // Multiple sheets calculation for large quantities
     const totalSheetsNeeded = Math.ceil(quantity / piecesPerSheet);
     const sheets = [];
     let remainingPiecesToAllocate = quantity;
@@ -110,11 +118,9 @@ export default function CutMindApp() {
         if (placedInSheet >= piecesOnThisSheet) break;
       }
 
-      // Exact Area & Waste Calculations per Sheet
       const totalPaperArea = paperWidth * paperHeight;
       const occupiedAreaPerPiece = pieceWidth * pieceHeight;
       const totalOccupiedArea = piecesOnThisSheet * occupiedAreaPerPiece;
-      const wasteArea = totalPaperArea - totalOccupiedArea;
       const utilizationPct = Number(((totalOccupiedArea / totalPaperArea) * 100).toFixed(2));
       const wastePct = Number((100 - utilizationPct).toFixed(2));
 
@@ -123,9 +129,7 @@ export default function CutMindApp() {
         piecesCount: piecesOnThisSheet,
         rectangles: sheetRectangles,
         utilization: utilizationPct,
-        waste: wastePct,
-        totalPaperArea,
-        totalOccupiedArea
+        waste: wastePct
       });
 
       remainingPiecesToAllocate -= piecesOnThisSheet;
@@ -149,7 +153,6 @@ export default function CutMindApp() {
 
   return (
     <div className="flex h-screen bg-gray-950 text-gray-100 font-sans">
-      {/* Sidebar Navigation */}
       <aside className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col justify-between p-4">
         <div>
           <div className="flex items-center gap-3 px-2 mb-8">
@@ -168,19 +171,13 @@ export default function CutMindApp() {
         </div>
 
         <div>
-          <SidebarItem 
-            icon={<LogOut size={18} />} 
-            label="Logout" 
-            active={false} 
-            onClick={() => alert("Logged out securely from CutMind AI.")} 
-          />
+          <SidebarItem icon={<LogOut size={18} />} label="Logout" active={false} onClick={() => alert("Logged out securely.")} />
         </div>
       </aside>
 
-      {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto p-8">
         {activeTab === 'dashboard' && <DashboardView setActiveTab={setActiveTab} />}
-        {activeTab === 'new' && <NewOptimizationView formData={formData} handleInputChange={handleInputChange} runMathematicalOptimization={runMathematicalOptimization} />}
+        {activeTab === 'new' && <NewOptimizationView formData={formData} handleInputChange={handleInputChange} runMathematicalOptimization={runMathematicalOptimization} isFormValid={isFormValid} canFitAtLeastOne={canFitAtLeastOne} isUsableValid={isUsableValid} />}
         {activeTab === 'result' && <ResultView optimizationResult={optimizationResult} setActiveTab={setActiveTab} />}
         {activeTab === 'reports' && <ReportsView />}
         {activeTab === 'profile' && <ProfileView />}
@@ -192,12 +189,7 @@ export default function CutMindApp() {
 
 function SidebarItem({ icon, label, active, onClick }) {
   return (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
-        active ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-      }`}
-    >
+    <button onClick={onClick} className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-medium transition-colors ${active ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}>
       {icon}
       <span>{label}</span>
     </button>
@@ -212,51 +204,15 @@ function DashboardView({ setActiveTab }) {
           <h1 className="text-2xl font-bold">Dashboard</h1>
           <p className="text-gray-400 text-sm">AI-Based Sheet Cutting & Material Optimization System</p>
         </div>
-        <button 
-          onClick={() => setActiveTab('new')}
-          className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-semibold text-sm flex items-center gap-2 shadow-lg shadow-emerald-900/20 cursor-pointer"
-        >
+        <button onClick={() => setActiveTab('new')} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-semibold text-sm flex items-center gap-2 cursor-pointer">
           <PlusCircle size={16} /> New Optimization
         </button>
       </div>
-
       <div className="grid grid-cols-4 gap-4">
         <MetricCard title="Total Orders" value="26" />
         <MetricCard title="Paper Used" value="1,280 m²" />
         <MetricCard title="Paper Saved" value="194 m²" />
         <MetricCard title="Waste Percentage" value="11.4%" sub="Rigid Mathematical Heuristic" positive />
-      </div>
-
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-        <h3 className="text-lg font-semibold mb-4">Recent Optimization Runs</h3>
-        <table className="w-full text-left text-sm text-gray-300">
-          <thead className="border-b border-gray-800 text-gray-400">
-            <tr>
-              <th className="pb-3">ID</th>
-              <th className="pb-3">Paper Size (mm)</th>
-              <th className="pb-3">Req. Quantity</th>
-              <th className="pb-3">Sheets</th>
-              <th className="pb-3">Waste %</th>
-              <th className="pb-3">Date</th>
-              <th className="pb-3">Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-800">
-            <tr>
-              <td className="py-3 font-medium text-white">#26</td>
-              <td className="py-3">1000 x 700</td>
-              <td className="py-3">20</td>
-              <td className="py-3">1 Sheet</td>
-              <td className="py-3 text-emerald-400">5.71%</td>
-              <td className="py-3">Today</td>
-              <td className="py-3">
-                <button onClick={() => setActiveTab('result')} className="text-emerald-400 hover:underline flex items-center gap-1 text-xs font-semibold cursor-pointer">
-                  View <ArrowRight size={14} />
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
       </div>
     </div>
   );
@@ -272,14 +228,7 @@ function MetricCard({ title, value, sub, positive }) {
   );
 }
 
-function NewOptimizationView({ formData, handleInputChange, runMathematicalOptimization }) {
-  const singleFitsNormal = (formData.paperWidth - 2 * formData.margin >= formData.pieceWidth) && 
-                           (formData.paperHeight - 2 * formData.margin >= formData.pieceHeight);
-  const singleFitsRotated = formData.allowRotation && 
-                            (formData.paperWidth - 2 * formData.margin >= formData.pieceHeight) && 
-                            (formData.paperHeight - 2 * formData.margin >= formData.pieceWidth);
-  const isValid = singleFitsNormal || singleFitsRotated;
-
+function NewOptimizationView({ formData, handleInputChange, runMathematicalOptimization, isFormValid, canFitAtLeastOne, isUsableValid }) {
   return (
     <div className="space-y-6 max-w-5xl">
       <h1 className="text-2xl font-bold">New Optimization</h1>
@@ -329,26 +278,30 @@ function NewOptimizationView({ formData, handleInputChange, runMathematicalOptim
           </div>
 
           <div className="pt-2">
-            {isValid ? (
-              <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-500/30 mb-4">
-                <CheckCircle size={15} /> Validated: Dimensions fit master sheet.
+            {!isUsableValid ? (
+              <div className="flex items-center gap-2 text-xs text-red-400 bg-red-950/40 p-2.5 rounded-xl border border-red-500/30 mb-4">
+                <AlertTriangle size={15} /> 🔒 LOCKED: Margin is too large!
+              </div>
+            ) : !canFitAtLeastOne ? (
+              <div className="flex items-center gap-2 text-xs text-red-400 bg-red-950/40 p-2.5 rounded-xl border border-red-500/30 mb-4">
+                <AlertTriangle size={15} /> 🔒 LOCKED: Piece too large for sheet!
               </div>
             ) : (
-              <div className="flex items-center gap-2 text-xs text-red-400 bg-red-950/40 p-2.5 rounded-xl border border-red-500/30 mb-4">
-                <AlertTriangle size={15} /> Invalid: Piece dimensions exceed sheet limits.
+              <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-500/30 mb-4">
+                <CheckCircle size={15} /> ✨ ENABLED: Ready for multi-sheet layout!
               </div>
             )}
 
             <button 
               onClick={runMathematicalOptimization}
-              disabled={!isValid}
+              disabled={!isFormValid}
               className={`w-full py-3 rounded-xl font-semibold transition-all shadow-lg ${
-                isValid 
+                isFormValid 
                   ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20 cursor-pointer' 
-                  : 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                  : 'bg-gray-800 text-gray-500 cursor-not-allowed opacity-50'
               }`}
             >
-              Optimize Now ✨
+              {isFormValid ? "Optimize Now ✨" : "Locked (Invalid Inputs) 🔒"}
             </button>
           </div>
         </div>
@@ -387,7 +340,7 @@ function ResultView({ optimizationResult, setActiveTab }) {
           <button onClick={() => setActiveTab('new')} className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-xl font-semibold text-sm cursor-pointer">
             Modify Inputs
           </button>
-          <button onClick={() => alert("Generating & Downloading Detailed PDF Cutting Report...")} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-semibold text-sm flex items-center gap-2 cursor-pointer">
+          <button onClick={() => alert("Downloading PDF Report...")} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-semibold text-sm flex items-center gap-2 cursor-pointer">
             <Download size={16} /> Download PDF Report
           </button>
         </div>
@@ -480,14 +433,6 @@ function ResultView({ optimizationResult, setActiveTab }) {
               })}
             </div>
           </div>
-
-          <div className="flex gap-6 mt-4 text-xs text-gray-400 justify-between items-center">
-            <div className="flex gap-4">
-              <span className="flex items-center gap-1.5"><span className="w-3 h-3 bg-emerald-600 inline-block rounded"></span> Usable Placed Pieces</span>
-              <span className="flex items-center gap-1.5"><span className="w-3 h-3 bg-gray-900 border border-gray-700 inline-block rounded"></span> Usable/Eco-Waste Area</span>
-            </div>
-            <span className="text-emerald-400 font-semibold">Margin: {result.margin} mm applied</span>
-          </div>
         </div>
       </div>
     </div>
@@ -500,10 +445,10 @@ function ReportsView() {
       <h1 className="text-2xl font-bold">Reports Archive</h1>
       <p className="text-gray-400 text-sm">Archived historical manufacturing optimization logs and material efficiency certificates.</p>
       <div className="space-y-3">
-        {['#26 - 1000x700mm (5.71% Waste - 1 Sheet)', '#25 - 1200x800mm (8.40% Waste - 2 Sheets)', '#24 - 900x600mm (4.12% Waste - 1 Sheet)'].map((report, idx) => (
+        {['#26 - 1000x700mm (5.71% Waste - 1 Sheet)', '#25 - 1200x800mm (8.40% Waste - 2 Sheets)'].map((report, idx) => (
           <div key={idx} className="bg-gray-900 border border-gray-800 p-4 rounded-xl flex justify-between items-center">
             <span className="font-semibold text-white">Optimization Report {report}</span>
-            <button onClick={() => alert(`Downloading verified report archive...`)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 cursor-pointer">
+            <button onClick={() => alert(`Downloading verified report...`)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 cursor-pointer">
               <Download size={14} /> Download PDF
             </button>
           </div>
@@ -526,10 +471,6 @@ function ProfileView() {
           <label className="text-xs text-gray-400 block mb-1">Organization / Manufacturing Unit</label>
           <input type="text" defaultValue="AR Electro Projects" className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-emerald-500" />
         </div>
-        <div>
-          <label className="text-xs text-gray-400 block mb-1">Location</label>
-          <input type="text" defaultValue="Ahmedabad, Gujarat, India" className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-emerald-500" />
-        </div>
         <button onClick={() => alert("Profile updated successfully!")} className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-xl font-semibold text-sm cursor-pointer">
           Save Changes
         </button>
@@ -550,14 +491,7 @@ function SettingsView() {
           </div>
           <input type="checkbox" defaultChecked className="w-5 h-5 accent-emerald-500 cursor-pointer" />
         </div>
-        <div className="flex items-center justify-between py-2 border-b border-gray-800">
-          <div>
-            <p className="font-semibold text-white">Eco-Friendly Waste Reduction Mode</p>
-            <p className="text-xs text-gray-400">Prioritize minimal scrap area across multi-sheet roll optimizations.</p>
-          </div>
-          <input type="checkbox" defaultChecked className="w-5 h-5 accent-emerald-500 cursor-pointer" />
-        </div>
-        <button onClick={() => alert("System settings saved successfully!")} className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-xl font-semibold text-sm cursor-pointer">
+        <button onClick={() => alert("Settings saved successfully!")} className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-xl font-semibold text-sm cursor-pointer">
           Update Settings
         </button>
       </div>
