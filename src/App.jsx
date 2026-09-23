@@ -85,6 +85,7 @@ export default function CutMindApp() {
     const totalSheetsNeeded = Math.ceil(quantity / piecesPerSheet);
     const sheets = [];
     let remainingPiecesToAllocate = quantity;
+    let currentPieceId = 1;
 
     for (let s = 0; s < totalSheetsNeeded; s++) {
       const piecesOnThisSheet = Math.min(piecesPerSheet, remainingPiecesToAllocate);
@@ -99,7 +100,7 @@ export default function CutMindApp() {
           if (placedInSheet >= piecesOnThisSheet) break;
 
           sheetRectangles.push({
-            id: remainingPiecesToAllocate - piecesOnThisSheet + placedInSheet + 1,
+            id: currentPieceId++,
             x: currentX,
             y: currentY,
             width: pWidth,
@@ -155,7 +156,7 @@ export default function CutMindApp() {
         <div>
           <div className="flex items-center gap-3 px-2 mb-8">
             <div className="bg-emerald-500 p-2 rounded-lg text-black font-bold">✂️</div>
-            <span className="text-xl font-bold tracking-wide text-white">CutMind <span className="text-emerald-400">AI</span> (v2.1 Strict)</span>
+            <span className="text-xl font-bold tracking-wide text-white">CutMind <span className="text-emerald-400">AI</span></span>
           </div>
           
           <nav className="space-y-1">
@@ -229,7 +230,7 @@ function MetricCard({ title, value, sub, positive }) {
 function NewOptimizationView({ formData, handleInputChange, runMathematicalOptimization, isFormValid, canFitAtLeastOne, isUsableValid }) {
   return (
     <div className="space-y-6 max-w-5xl">
-      <h1 className="text-2xl font-bold">New Optimization (Strict Validation v2.1)</h1>
+      <h1 className="text-2xl font-bold">New Optimization</h1>
       
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 grid grid-cols-3 gap-6">
         <div className="space-y-4">
