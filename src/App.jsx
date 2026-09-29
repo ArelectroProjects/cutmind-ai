@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, PlusCircle, FileText, User, Settings, LogOut, Download, AlertTriangle, CheckCircle, ArrowLeft, Edit3, Save } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, FileText, User, Settings, LogOut, Download, AlertTriangle, CheckCircle, ArrowLeft, Edit3, Save, Moon, Sun } from 'lucide-react';
 
 export default function CutMindApp() {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [darkMode, setDarkMode] = useState(true);
 
   const [formData, setFormData] = useState({
     paperWidth: 1000,
@@ -19,22 +20,23 @@ export default function CutMindApp() {
 
   const [reports, setReports] = useState([
     {
-      id: 23,
+      id: 22,
       date: '29 Sept 2026',
-      customerName: 'AR Electro Unit',
+      time: '12:19 PM',
+      customerName: 'AR Electro Projects',
       phone: '+91 9000000000',
-      email: 'contact@arelectro.com',
-      paperWidth: 1759,
+      email: 'rajeshbhaichipa-1@okhdfcbank',
+      paperWidth: 1023,
       paperHeight: 700,
       paperThickness: 0.2,
       margin: 5,
       allowRotation: 'Yes',
-      pieceWidth: 1007,
+      pieceWidth: 200,
       pieceHeight: 150,
       quantity: 20,
-      totalSheets: 5,
-      utilization: 49.07,
-      waste: 50.93
+      totalSheets: 1,
+      utilization: 83.79,
+      waste: 16.21
     }
   ]);
 
@@ -161,12 +163,14 @@ export default function CutMindApp() {
 
     setOptimizationResult(newResult);
 
+    const now = new Date();
     const newReportItem = {
       id: reports.length + 20,
-      date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-      customerName: 'AR Electro Unit',
+      date: now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      customerName: 'AR Electro Projects',
       phone: '+91 9000000000',
-      email: 'contact@arelectro.com',
+      email: 'rajeshbhaichipa-1@okhdfcbank',
       paperWidth,
       paperHeight,
       paperThickness,
@@ -197,35 +201,54 @@ export default function CutMindApp() {
     setIsEditingCustomer(false);
   };
 
+  const themeBg = darkMode ? 'bg-gray-950 text-gray-100' : 'bg-gray-100 text-gray-900';
+  const sidebarBg = darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200';
+  const cardBg = darkMode ? 'bg-gray-900 border-gray-800 text-white' : 'bg-white border-gray-200 text-gray-900';
+
   return (
-    <div className="flex h-screen bg-gray-950 text-gray-100 font-sans">
-      {/* Sidebar hidden during print */}
-      <aside className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col justify-between p-4 print:hidden">
+    <div className={`flex h-screen font-sans ${themeBg}`}>
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          @page {
+            margin: 10mm;
+            size: auto;
+          }
+          body {
+            background-color: white !important;
+            -webkit-print-color-adjust: exact;
+          }
+          .print\\:hidden {
+            display: none !important;
+          }
+        }
+      `}} />
+
+      <aside className={`w-64 border-r flex flex-col justify-between p-4 print:hidden ${sidebarBg}`}>
         <div>
           <div className="flex items-center gap-3 px-2 mb-8">
             <div className="bg-emerald-500 p-2 rounded-lg text-black font-bold">✂️</div>
-            <span className="text-xl font-bold tracking-wide text-white">CutMind <span className="text-emerald-400">AI</span></span>
+            <span className="text-xl font-bold tracking-wide">CutMind <span className="text-emerald-500">AI</span></span>
           </div>
           
           <nav className="space-y-1">
-            <SidebarItem icon={<LayoutDashboard size={18} />} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
-            <SidebarItem icon={<PlusCircle size={18} />} label="New Optimization" active={activeTab === 'new'} onClick={() => setActiveTab('new')} />
-            <SidebarItem icon={<FileText size={18} />} label="Optimization Result" active={activeTab === 'result'} onClick={() => setActiveTab('result')} />
-            <SidebarItem icon={<FileText size={18} />} label="Reports" active={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />
-            <SidebarItem icon={<User size={18} />} label="Profile" active={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
-            <SidebarItem icon={<Settings size={18} />} label="Settings" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
+            <SidebarItem icon={<LayoutDashboard size={18} />} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} darkMode={darkMode} />
+            <SidebarItem icon={<PlusCircle size={18} />} label="New Optimization" active={activeTab === 'new'} onClick={() => setActiveTab('new')} darkMode={darkMode} />
+            <SidebarItem icon={<FileText size={18} />} label="Optimization Result" active={activeTab === 'result'} onClick={() => setActiveTab('result')} darkMode={darkMode} />
+            <SidebarItem icon={<FileText size={18} />} label="Reports" active={activeTab === 'reports'} onClick={() => setActiveTab('reports')} darkMode={darkMode} />
+            <SidebarItem icon={<User size={18} />} label="Profile" active={activeTab === 'profile'} onClick={() => setActiveTab('profile')} darkMode={darkMode} />
+            <SidebarItem icon={<Settings size={18} />} label="Settings" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} darkMode={darkMode} />
           </nav>
         </div>
 
         <div>
-          <SidebarItem icon={<LogOut size={18} />} label="Logout" active={false} onClick={() => alert("Logged out securely.")} />
+          <SidebarItem icon={<LogOut size={18} />} label="Logout" active={false} onClick={() => alert("Logged out securely.")} darkMode={darkMode} />
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto p-10">
-        {activeTab === 'dashboard' && <DashboardView setActiveTab={setActiveTab} />}
-        {activeTab === 'new' && <NewOptimizationView formData={formData} handleInputChange={handleInputChange} runMathematicalOptimization={runMathematicalOptimization} isFormValid={isFormValid} canFitAtLeastOne={canFitAtLeastOne} isUsableValid={isUsableValid} />}
-        {activeTab === 'result' && <ResultView optimizationResult={optimizationResult} setActiveTab={setActiveTab} />}
+      <main className="flex-1 overflow-y-auto p-10 print:p-0 print:overflow-visible">
+        {activeTab === 'dashboard' && <DashboardView setActiveTab={setActiveTab} cardBg={cardBg} darkMode={darkMode} />}
+        {activeTab === 'new' && <NewOptimizationView formData={formData} handleInputChange={handleInputChange} runMathematicalOptimization={runMathematicalOptimization} isFormValid={isFormValid} canFitAtLeastOne={canFitAtLeastOne} isUsableValid={isUsableValid} cardBg={cardBg} darkMode={darkMode} />}
+        {activeTab === 'result' && <ResultView optimizationResult={optimizationResult} setActiveTab={setActiveTab} cardBg={cardBg} darkMode={darkMode} />}
         {activeTab === 'reports' && (
           <ReportsView 
             reports={reports} 
@@ -236,103 +259,107 @@ export default function CutMindApp() {
             editCustomerData={editCustomerData}
             setEditCustomerData={setEditCustomerData}
             saveCustomerDetails={saveCustomerDetails}
+            cardBg={cardBg}
+            darkMode={darkMode}
           />
         )}
-        {activeTab === 'profile' && <ProfileView />}
-        {activeTab === 'settings' && <SettingsView />}
+        {activeTab === 'profile' && <ProfileView cardBg={cardBg} darkMode={darkMode} />}
+        {activeTab === 'settings' && <SettingsView darkMode={darkMode} setDarkMode={setDarkMode} cardBg={cardBg} />}
       </main>
     </div>
   );
 }
 
-function SidebarItem({ icon, label, active, onClick }) {
+function SidebarItem({ icon, label, active, onClick, darkMode }) {
   return (
-    <button onClick={onClick} className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-medium transition-colors ${active ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}>
+    <button onClick={onClick} className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-medium transition-colors cursor-pointer ${active ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20' : darkMode ? 'text-gray-400 hover:bg-gray-800 hover:text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>
       {icon}
       <span>{label}</span>
     </button>
   );
 }
 
-function DashboardView({ setActiveTab }) {
+function DashboardView({ setActiveTab, cardBg, darkMode }) {
   return (
     <div className="space-y-6 max-w-6xl">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-gray-400 text-sm">AI-Based Sheet Cutting & Material Optimization System</p>
+          <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} text-sm`}>AI-Based Sheet Cutting & Material Optimization System</p>
         </div>
-        <button onClick={() => setActiveTab('new')} className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 cursor-pointer shadow-lg shadow-emerald-900/20">
+        <button onClick={() => setActiveTab('new')} className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 cursor-pointer shadow-lg">
           <PlusCircle size={16} /> New Optimization
         </button>
       </div>
       <div className="grid grid-cols-4 gap-5">
-        <MetricCard title="Total Orders" value="26" />
-        <MetricCard title="Paper Used" value="1,280 m²" />
-        <MetricCard title="Paper Saved" value="194 m²" />
-        <MetricCard title="Waste Percentage" value="11.4%" sub="Rigid Mathematical Heuristic" positive />
+        <MetricCard title="Total Orders" value="26" cardBg={cardBg} darkMode={darkMode} />
+        <MetricCard title="Paper Used" value="1,280 m²" cardBg={cardBg} darkMode={darkMode} />
+        <MetricCard title="Paper Saved" value="194 m²" cardBg={cardBg} darkMode={darkMode} />
+        <MetricCard title="Waste Percentage" value="11.4%" sub="Rigid Mathematical Heuristic" positive cardBg={cardBg} darkMode={darkMode} />
       </div>
     </div>
   );
 }
 
-function MetricCard({ title, value, sub, positive }) {
+function MetricCard({ title, value, sub, positive, cardBg, darkMode }) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-      <p className="text-xs text-gray-400 font-medium">{title}</p>
-      <p className="text-3xl font-bold mt-2 text-white">{value}</p>
-      {sub && <p className={`text-xs mt-2 ${positive ? 'text-emerald-400' : 'text-gray-500'}`}>{sub}</p>}
+    <div className={`border rounded-2xl p-6 ${cardBg}`}>
+      <p className={`text-xs font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{title}</p>
+      <p className="text-3xl font-bold mt-2">{value}</p>
+      {sub && <p className={`text-xs mt-2 ${positive ? 'text-emerald-500' : 'text-gray-400'}`}>{sub}</p>}
     </div>
   );
 }
 
-function NewOptimizationView({ formData, handleInputChange, runMathematicalOptimization, isFormValid, canFitAtLeastOne, isUsableValid }) {
+function NewOptimizationView({ formData, handleInputChange, runMathematicalOptimization, isFormValid, canFitAtLeastOne, isUsableValid, cardBg, darkMode }) {
+  const inputBg = darkMode ? 'bg-gray-950 border-gray-800 text-white' : 'bg-gray-50 border-gray-300 text-gray-900';
+
   return (
     <div className="space-y-6 max-w-5xl">
       <h1 className="text-2xl font-bold">New Optimization</h1>
       
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 grid grid-cols-3 gap-8">
+      <div className={`border rounded-2xl p-8 grid grid-cols-3 gap-8 ${cardBg}`}>
         <div className="space-y-4">
-          <h3 className="font-semibold text-emerald-400">Paper Details</h3>
+          <h3 className="font-semibold text-emerald-500">Paper Details</h3>
           <div>
-            <label className="text-xs text-gray-400 block mb-1">Paper Width (mm)</label>
-            <input type="number" name="paperWidth" value={formData.paperWidth} onChange={handleInputChange} className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
+            <label className={`text-xs block mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Paper Width (mm)</label>
+            <input type="number" name="paperWidth" value={formData.paperWidth} onChange={handleInputChange} className={`w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 ${inputBg}`} />
           </div>
           <div>
-            <label className="text-xs text-gray-400 block mb-1">Paper Height (mm)</label>
-            <input type="number" name="paperHeight" value={formData.paperHeight} onChange={handleInputChange} className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
+            <label className={`text-xs block mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Paper Height (mm)</label>
+            <input type="number" name="paperHeight" value={formData.paperHeight} onChange={handleInputChange} className={`w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 ${inputBg}`} />
           </div>
           <div>
-            <label className="text-xs text-gray-400 block mb-1">Paper Thickness (mm)</label>
-            <input type="number" name="paperThickness" value={formData.paperThickness} onChange={handleInputChange} className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
+            <label className={`text-xs block mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Paper Thickness (mm)</label>
+            <input type="number" name="paperThickness" value={formData.paperThickness} onChange={handleInputChange} className={`w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 ${inputBg}`} />
           </div>
         </div>
 
         <div className="space-y-4">
-          <h3 className="font-semibold text-emerald-400">Piece Details</h3>
+          <h3 className="font-semibold text-emerald-500">Piece Details</h3>
           <div>
-            <label className="text-xs text-gray-400 block mb-1">Piece Width (mm)</label>
-            <input type="number" name="pieceWidth" value={formData.pieceWidth} onChange={handleInputChange} className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
+            <label className={`text-xs block mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Piece Width (mm)</label>
+            <input type="number" name="pieceWidth" value={formData.pieceWidth} onChange={handleInputChange} className={`w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 ${inputBg}`} />
           </div>
           <div>
-            <label className="text-xs text-gray-400 block mb-1">Piece Height (mm)</label>
-            <input type="number" name="pieceHeight" value={formData.pieceHeight} onChange={handleInputChange} className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
+            <label className={`text-xs block mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Piece Height (mm)</label>
+            <input type="number" name="pieceHeight" value={formData.pieceHeight} onChange={handleInputChange} className={`w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 ${inputBg}`} />
           </div>
           <div>
-            <label className="text-xs text-gray-400 block mb-1">Exact Quantity Required</label>
-            <input type="number" name="quantity" value={formData.quantity} onChange={handleInputChange} className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
+            <label className={`text-xs block mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Exact Quantity Required</label>
+            <input type="number" name="quantity" value={formData.quantity} onChange={handleInputChange} className={`w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 ${inputBg}`} />
           </div>
         </div>
 
         <div className="space-y-4">
-          <h3 className="font-semibold text-emerald-400">Constraints & Margins</h3>
+          <h3 className="font-semibold text-emerald-500">Constraints & Margins</h3>
           <div className="flex items-center justify-between py-2">
-            <span className="text-sm text-gray-300">Allow Rotation (90°)</span>
+            <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Allow Rotation (90°)</span>
             <input type="checkbox" name="allowRotation" checked={formData.allowRotation} onChange={handleInputChange} className="w-5 h-5 accent-emerald-500 cursor-pointer" />
           </div>
           <div className="flex items-center justify-between py-2">
-            <span className="text-sm text-gray-300">Cutting Margin (mm)</span>
-            <input type="number" name="margin" value={formData.margin} onChange={handleInputChange} className="w-20 bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-white text-center focus:outline-none focus:border-emerald-500" />
+            <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Cutting Margin (mm)</span>
+            <input type="number" name="margin" value={formData.margin} onChange={handleInputChange} className={`w-20 border rounded-xl px-3 py-2 text-center focus:outline-none focus:border-emerald-500 ${inputBg}`} />
           </div>
 
           <div className="pt-3">
@@ -345,7 +372,7 @@ function NewOptimizationView({ formData, handleInputChange, runMathematicalOptim
                 <AlertTriangle size={15} /> 🔒 LOCKED: Piece exceeds sheet size!
               </div>
             ) : (
-              <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-950/40 p-3 rounded-xl border border-emerald-500/30 mb-4">
+              <div className="flex items-center gap-2 text-xs text-emerald-500 bg-emerald-950/40 p-3 rounded-xl border border-emerald-500/30 mb-4">
                 <CheckCircle size={15} /> ✨ ENABLED: Ready for multi-sheet layout!
               </div>
             )}
@@ -355,7 +382,7 @@ function NewOptimizationView({ formData, handleInputChange, runMathematicalOptim
               disabled={!isFormValid}
               className={`w-full py-3.5 rounded-xl font-semibold transition-all shadow-lg ${
                 isFormValid 
-                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20 cursor-pointer' 
+                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer shadow-emerald-900/20' 
                   : 'bg-red-900/60 border border-red-500 text-red-200 cursor-not-allowed'
               }`}
             >
@@ -368,7 +395,7 @@ function NewOptimizationView({ formData, handleInputChange, runMathematicalOptim
   );
 }
 
-function ResultView({ optimizationResult, setActiveTab }) {
+function ResultView({ optimizationResult, setActiveTab, cardBg, darkMode }) {
   const [activeSheetTab, setActiveSheetTab] = useState(0);
 
   const result = optimizationResult || {
@@ -384,21 +411,22 @@ function ResultView({ optimizationResult, setActiveTab }) {
   };
 
   const currentSheet = result.sheets[activeSheetTab] || result.sheets[0];
+  const innerCardBg = darkMode ? 'bg-gray-950 border-gray-800' : 'bg-gray-50 border-gray-200';
 
   return (
     <div className="space-y-6 max-w-6xl">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Exact Optimization Result</h1>
-          <p className="text-gray-400 text-sm mt-1">
+          <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
             Master Sheet: {result.paperWidth} × {result.paperHeight} mm | Requested Quantity: {result.quantity} Pieces | Total Sheets: {result.totalSheets}
           </p>
         </div>
-        <div className="flex gap-3">
-          <button onClick={() => setActiveTab('new')} className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2.5 rounded-xl font-semibold text-sm cursor-pointer">
+        <div className="flex gap-3 print:hidden">
+          <button onClick={() => setActiveTab('new')} className={`px-4 py-2.5 rounded-xl font-semibold text-sm border cursor-pointer ${darkMode ? 'bg-gray-800 border-gray-700 text-white hover:bg-gray-700' : 'bg-white border-gray-300 text-gray-800 hover:bg-gray-100'}`}>
             Modify Inputs
           </button>
-          <button onClick={() => window.print()} className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 cursor-pointer shadow-lg shadow-emerald-900/20">
+          <button onClick={() => window.print()} className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 cursor-pointer shadow-lg">
             <Download size={16} /> Print / Save as PDF
           </button>
         </div>
@@ -406,30 +434,30 @@ function ResultView({ optimizationResult, setActiveTab }) {
 
       <div className="grid grid-cols-3 gap-6">
         <div className="space-y-5">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
-            <h3 className="font-semibold text-emerald-400">Mathematical Summary</h3>
+          <div className={`border rounded-2xl p-6 space-y-4 ${cardBg}`}>
+            <h3 className="font-semibold text-emerald-500">Mathematical Summary</h3>
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gray-950 p-3.5 rounded-xl border border-gray-800">
-                <p className="text-xs text-gray-400">Required Pieces</p>
-                <p className="text-xl font-bold text-white mt-1">{result.quantity}</p>
+              <div className={`border p-3.5 rounded-xl ${innerCardBg}`}>
+                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Required Pieces</p>
+                <p className="text-xl font-bold mt-1">{result.quantity}</p>
               </div>
-              <div className="bg-gray-950 p-3.5 rounded-xl border border-gray-800">
-                <p className="text-xs text-gray-400">Sheets Required</p>
-                <p className="text-xl font-bold text-emerald-400 mt-1">{result.totalSheets}</p>
+              <div className={`border p-3.5 rounded-xl ${innerCardBg}`}>
+                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Sheets Required</p>
+                <p className="text-xl font-bold text-emerald-500 mt-1">{result.totalSheets}</p>
               </div>
-              <div className="bg-gray-950 p-3.5 rounded-xl border border-gray-800">
-                <p className="text-xs text-gray-400">Sheet Utilization</p>
-                <p className="text-xl font-bold text-emerald-400 mt-1">{currentSheet.utilization}%</p>
+              <div className={`border p-3.5 rounded-xl ${innerCardBg}`}>
+                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Sheet Utilization</p>
+                <p className="text-xl font-bold text-emerald-500 mt-1">{currentSheet.utilization}%</p>
               </div>
-              <div className="bg-gray-950 p-3.5 rounded-xl border border-gray-800">
-                <p className="text-xs text-gray-400">Sheet Waste Area</p>
-                <p className="text-xl font-bold text-red-400 mt-1">{currentSheet.waste}%</p>
+              <div className={`border p-3.5 rounded-xl ${innerCardBg}`}>
+                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Sheet Waste Area</p>
+                <p className="text-xl font-bold text-red-500 mt-1">{currentSheet.waste}%</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-3">
-            <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Select Sheet Layout</h4>
+          <div className={`border rounded-2xl p-5 space-y-3 ${cardBg}`}>
+            <h4 className={`text-xs font-semibold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Select Sheet Layout</h4>
             <div className="flex flex-wrap gap-2">
               {result.sheets.map((sh, idx) => (
                 <button
@@ -437,8 +465,8 @@ function ResultView({ optimizationResult, setActiveTab }) {
                   onClick={() => setActiveSheetTab(idx)}
                   className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                     activeSheetTab === idx 
-                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/20' 
-                      : 'bg-gray-950 text-gray-300 border border-gray-800 hover:bg-gray-800'
+                      ? 'bg-emerald-600 text-white shadow-md' 
+                      : darkMode ? 'bg-gray-950 text-gray-300 border border-gray-800 hover:bg-gray-800' : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
                   }`}
                 >
                   Sheet #{sh.sheetIndex} ({sh.piecesCount} pcs)
@@ -448,15 +476,15 @@ function ResultView({ optimizationResult, setActiveTab }) {
           </div>
         </div>
 
-        <div className="col-span-2 bg-gray-900 border border-gray-800 rounded-2xl p-6 flex flex-col">
+        <div className={`border rounded-2xl p-6 flex flex-col ${cardBg}`}>
           <div className="flex justify-between items-center mb-4">
-            <h3 className="font-semibold text-emerald-400">
+            <h3 className="font-semibold text-emerald-500">
               Proportional Cutting Layout — Sheet #{currentSheet.sheetIndex} ({currentSheet.piecesCount} Pieces)
             </h3>
-            <span className="text-xs text-gray-400">Master: {result.paperWidth} × {result.paperHeight} mm</span>
+            <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Master: {result.paperWidth} × {result.paperHeight} mm</span>
           </div>
 
-          <div className="flex-1 bg-gray-950 border border-gray-800 rounded-xl relative p-6 flex items-center justify-center min-h-[380px] overflow-hidden">
+          <div className={`flex-1 border rounded-xl relative p-6 flex items-center justify-center min-h-[380px] overflow-hidden ${innerCardBg}`}>
             <div 
               className="relative bg-emerald-950/30 border-2 border-emerald-500/60 rounded-lg shadow-inner"
               style={{
@@ -497,18 +525,18 @@ function ResultView({ optimizationResult, setActiveTab }) {
   );
 }
 
-function ReportsView({ reports, selectedReport, setSelectedReport, isEditingCustomer, setIsEditingCustomer, editCustomerData, setEditCustomerData, saveCustomerDetails }) {
+function ReportsView({ reports, selectedReport, setSelectedReport, isEditingCustomer, setIsEditingCustomer, editCustomerData, setEditCustomerData, saveCustomerDetails, cardBg, darkMode }) {
   return (
     <div className="space-y-6 max-w-6xl">
-      <div className="flex justify-between items-center bg-gray-900 border border-gray-800 p-6 rounded-2xl print:hidden">
+      <div className={`border p-6 rounded-2xl print:hidden flex justify-between items-center ${cardBg}`}>
         <div>
-          <h1 className="text-2xl font-bold text-white">Reports Archive</h1>
-          <p className="text-gray-400 text-sm mt-1">Click on any report to view certificate details or edit customer info.</p>
+          <h1 className="text-2xl font-bold">Reports Archive</h1>
+          <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Click on any report to view certificate details or edit customer info.</p>
         </div>
         {selectedReport && (
           <button 
             onClick={() => setSelectedReport(null)} 
-            className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 cursor-pointer transition-all border border-gray-700"
+            className={`px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 cursor-pointer border transition-all ${darkMode ? 'bg-gray-800 border-gray-700 text-white hover:bg-gray-700' : 'bg-gray-100 border-gray-300 text-gray-800 hover:bg-gray-200'}`}
           >
             <ArrowLeft size={14} /> Back to Archive List
           </button>
@@ -518,13 +546,13 @@ function ReportsView({ reports, selectedReport, setSelectedReport, isEditingCust
       {!selectedReport ? (
         <div className="space-y-3">
           {reports.map((rep) => (
-            <div key={rep.id} className="bg-gray-900 border border-gray-800 p-5 rounded-2xl flex justify-between items-center hover:border-emerald-500/50 transition-all shadow-md">
+            <div key={rep.id} className={`border p-5 rounded-2xl flex justify-between items-center transition-all shadow-md ${cardBg}`}>
               <div className="cursor-pointer flex-1" onClick={() => setSelectedReport(rep)}>
-                <span className="font-bold text-white text-base block hover:text-emerald-400 transition-colors">Optimization Report #{rep.id} ({rep.paperWidth}×{rep.paperHeight}mm)</span>
-                <span className="text-xs text-gray-400 mt-1 block">Customer: <strong className="text-gray-300">{rep.customerName}</strong> &nbsp;|&nbsp; Sheets: <strong className="text-emerald-400">{rep.totalSheets}</strong> &nbsp;|&nbsp; Waste: <strong className="text-red-400">{rep.waste}%</strong></span>
+                <span className="font-bold text-base block hover:text-emerald-500 transition-colors">Optimization Report #{rep.id} ({rep.paperWidth}×{rep.paperHeight}mm)</span>
+                <span className={`text-xs mt-1 block ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Customer: <strong className={darkMode ? 'text-gray-200' : 'text-gray-800'}>{rep.customerName}</strong> &nbsp;|&nbsp; Sheets: <strong className="text-emerald-500">{rep.totalSheets}</strong> &nbsp;|&nbsp; Waste: <strong className="text-red-500">{rep.waste}%</strong></span>
               </div>
               <div className="flex gap-3">
-                <button onClick={() => setSelectedReport(rep)} className="bg-gray-800 hover:bg-gray-700 text-emerald-400 px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer border border-gray-700 transition-all">
+                <button onClick={() => setSelectedReport(rep)} className={`px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer border transition-all ${darkMode ? 'bg-gray-800 border-gray-700 text-emerald-400 hover:bg-gray-700' : 'bg-gray-100 border-gray-300 text-emerald-600 hover:bg-gray-200'}`}>
                   View Certificate
                 </button>
               </div>
@@ -532,9 +560,15 @@ function ReportsView({ reports, selectedReport, setSelectedReport, isEditingCust
           ))}
         </div>
       ) : (
-        /* Printable Professional Certificate */
-        <div className="bg-white text-gray-900 border border-gray-300 rounded-2xl p-10 space-y-8 shadow-2xl relative">
+        /* Printable Professional Certificate with Built-in Date and Time */
+        <div className="bg-white text-gray-900 border border-gray-300 rounded-2xl p-10 space-y-8 shadow-2xl relative print:m-0 print:border-none print:shadow-none print:w-full print:p-0">
           
+          {/* Top Timestamp inside certificate (Replaces browser default header) */}
+          <div className="flex justify-between items-center text-[11px] text-gray-400 border-b border-gray-100 pb-2">
+            <span>{selectedReport.date} {selectedReport.time}</span>
+            <span>CutMind AI Verified System</span>
+          </div>
+
           {/* Top Header */}
           <div className="flex justify-between items-start border-b border-gray-200 pb-6">
             <div className="flex items-center gap-3">
@@ -622,7 +656,7 @@ function ReportsView({ reports, selectedReport, setSelectedReport, isEditingCust
                 <p className="flex justify-between"><span className="text-gray-500">Sheets Required:</span> <span className="font-bold text-emerald-600">{selectedReport.totalSheets} Sheets</span></p>
                 <p className="flex justify-between"><span className="text-gray-500">Material Used:</span> <span className="font-bold text-emerald-600">{selectedReport.utilization}%</span></p>
                 <p className="flex justify-between"><span className="text-gray-500">Waste:</span> <span className="font-bold text-red-500">{selectedReport.waste}%</span></p>
-                <p className="flex justify-between"><span className="text-gray-500">Efficiency:</span> <span className="font-bold text-emerald-600">{selectedReport.utilization}%</span></p>
+                <p className="flex justify-between"><span className="font-bold text-emerald-600">Efficiency:</span> <span className="font-bold text-emerald-600">{selectedReport.utilization}%</span></p>
               </div>
             </div>
 
@@ -659,20 +693,21 @@ function ReportsView({ reports, selectedReport, setSelectedReport, isEditingCust
   );
 }
 
-function ProfileView() {
+function ProfileView({ cardBg, darkMode }) {
+  const inputBg = darkMode ? 'bg-gray-950 border-gray-800 text-white' : 'bg-gray-50 border-gray-300 text-gray-900';
   return (
     <div className="space-y-6 max-w-xl">
       <h1 className="text-2xl font-bold">User Profile</h1>
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 space-y-5">
+      <div className={`border rounded-2xl p-8 space-y-5 ${cardBg}`}>
         <div>
-          <label className="text-xs text-gray-400 block mb-1">Full Name</label>
-          <input type="text" defaultValue="Ankit Chhipa" className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
+          <label className={`text-xs block mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Full Name</label>
+          <input type="text" defaultValue="Ankit Chhipa" className={`w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 ${inputBg}`} />
         </div>
         <div>
-          <label className="text-xs text-gray-400 block mb-1">Organization / Manufacturing Unit</label>
-          <input type="text" defaultValue="AR Electro Projects" className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
+          <label className={`text-xs block mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Organization / Manufacturing Unit</label>
+          <input type="text" defaultValue="AR Electro Projects" className={`w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 ${inputBg}`} />
         </div>
-        <button onClick={() => alert("Profile updated successfully!")} className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl font-semibold text-sm cursor-pointer shadow-lg shadow-emerald-900/20">
+        <button onClick={() => alert("Profile updated successfully!")} className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl font-semibold text-sm cursor-pointer shadow-lg">
           Save Changes
         </button>
       </div>
@@ -680,21 +715,28 @@ function ProfileView() {
   );
 }
 
-function SettingsView() {
+function SettingsView({ darkMode, setDarkMode, cardBg }) {
   return (
     <div className="space-y-6 max-w-xl">
       <h1 className="text-2xl font-bold">System Settings</h1>
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 space-y-5">
-        <div className="flex items-center justify-between py-3 border-b border-gray-800">
+      <div className={`border rounded-2xl p-8 space-y-5 ${cardBg}`}>
+        <div className="flex items-center justify-between py-3">
           <div>
-            <p className="font-semibold text-white">Deterministic Bin-Packing Engine</p>
-            <p className="text-xs text-gray-400 mt-0.5">Strict mathematical validation and multi-sheet coordinate calculation.</p>
+            <p className="font-semibold flex items-center gap-2">
+              {darkMode ? <Moon size={18} className="text-emerald-400" /> : <Sun size={18} className="text-amber-500" />}
+              Dark Mode Appearance
+            </p>
+            <p className={`text-xs mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Toggle between Dark and Light theme interface.</p>
           </div>
-          <input type="checkbox" defaultChecked className="w-5 h-5 accent-emerald-500 cursor-pointer" />
+          <button 
+            onClick={() => setDarkMode(!darkMode)}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              darkMode ? 'bg-emerald-600 text-white shadow-lg' : 'bg-gray-800 text-white'
+            }`}
+          >
+            {darkMode ? '🌙 Dark ON' : '☀️ Light ON'}
+          </button>
         </div>
-        <button onClick={() => alert("Settings saved successfully!")} className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl font-semibold text-sm cursor-pointer shadow-lg shadow-emerald-900/20">
-          Update Settings
-        </button>
       </div>
     </div>
   );
