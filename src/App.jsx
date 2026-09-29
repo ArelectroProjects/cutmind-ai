@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, PlusCircle, FileText, User, Settings, LogOut, Download, ArrowRight, AlertTriangle, CheckCircle } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, FileText, User, Settings, LogOut, Download, AlertTriangle, CheckCircle, Trash2 } from 'lucide-react';
 
 export default function CutMindApp() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -16,6 +16,36 @@ export default function CutMindApp() {
   });
 
   const [optimizationResult, setOptimizationResult] = useState(null);
+
+  // Dynamic Reports State (Saves live optimization history)
+  const [reports, setReports] = useState([
+    {
+      id: 26,
+      date: '29 Sep 2026',
+      paperWidth: 1000,
+      paperHeight: 700,
+      pieceWidth: 200,
+      pieceHeight: 150,
+      quantity: 20,
+      totalSheets: 1,
+      utilization: 85.71,
+      waste: 14.29
+    },
+    {
+      id: 25,
+      date: '28 Sep 2026',
+      paperWidth: 1200,
+      paperHeight: 800,
+      pieceWidth: 300,
+      pieceHeight: 200,
+      quantity: 15,
+      totalSheets: 2,
+      utilization: 91.60,
+      waste: 8.40
+    }
+  ]);
+
+  const [selectedReport, setSelectedReport] = useState(null);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -134,7 +164,7 @@ export default function CutMindApp() {
       remainingPiecesToAllocate -= piecesOnThisSheet;
     }
 
-    setOptimizationResult({
+    const newResult = {
       paperWidth,
       paperHeight,
       pieceWidth,
@@ -145,8 +175,25 @@ export default function CutMindApp() {
       piecesPerSheet,
       totalSheets: totalSheetsNeeded,
       sheets
-    });
+    };
 
+    setOptimizationResult(newResult);
+
+    // Automatically add to Reports History
+    const newReportItem = {
+      id: reports.length + 27,
+      date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      paperWidth,
+      paperHeight,
+      pieceWidth,
+      pieceHeight,
+      quantity,
+      totalSheets: totalSheetsNeeded,
+      utilization: sheets[0].utilization,
+      waste: sheets[0].waste
+    };
+
+    setReports([newReportItem, ...reports]);
     setActiveTab('result');
   };
 
@@ -178,7 +225,7 @@ export default function CutMindApp() {
         {activeTab === 'dashboard' && <DashboardView setActiveTab={setActiveTab} />}
         {activeTab === 'new' && <NewOptimizationView formData={formData} handleInputChange={handleInputChange} runMathematicalOptimization={runMathematicalOptimization} isFormValid={isFormValid} canFitAtLeastOne={canFitAtLeastOne} isUsableValid={isUsableValid} />}
         {activeTab === 'result' && <ResultView optimizationResult={optimizationResult} setActiveTab={setActiveTab} />}
-        {activeTab === 'reports' && <ReportsView />}
+        {activeTab === 'reports' && <ReportsView reports={reports} selectedReport={selectedReport} setSelectedReport={setSelectedReport} />}
         {activeTab === 'profile' && <ProfileView />}
         {activeTab === 'settings' && <SettingsView />}
       </main>
@@ -339,7 +386,7 @@ function ResultView({ optimizationResult, setActiveTab }) {
           <button onClick={() => setActiveTab('new')} className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-xl font-semibold text-sm cursor-pointer">
             Modify Inputs
           </button>
-          <button onClick={() => alert("Downloading PDF Report...")} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-semibold text-sm flex items-center gap-2 cursor-pointer">
+          <button onClick={() => alert("Downloading Verified PDF Report...")} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-semibold text-sm flex items-center gap-2 cursor-pointer">
             <Download size={16} /> Download PDF Report
           </button>
         </div>
@@ -438,21 +485,68 @@ function ResultView({ optimizationResult, setActiveTab }) {
   );
 }
 
-function ReportsView() {
+function ReportsView({ reports, selectedReport, setSelectedReport }) {
   return (
-    <div className="space-y-6 max-w-4xl">
-      <h1 className="text-2xl font-bold">Reports Archive</h1>
-      <p className="text-gray-400 text-sm">Archived historical manufacturing optimization logs and material efficiency certificates.</p>
-      <div className="space-y-3">
-        {['#26 - 1000x700mm (5.71% Waste - 1 Sheet)', '#25 - 1200x800mm (8.40% Waste - 2 Sheets)'].map((report, idx) => (
-          <div key={idx} className="bg-gray-900 border border-gray-800 p-4 rounded-xl flex justify-between items-center">
-            <span className="font-semibold text-white">Optimization Report {report}</span>
-            <button onClick={() => alert(`Downloading verified report...`)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 cursor-pointer">
-              <Download size={14} /> Download PDF
+    <div className="space-y-6 max-w-5xl">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold">Reports Archive</h1>
+          <p className="text-gray-400 text-sm">Click on any report to view details or download the verified PDF certificate.</p>
+        </div>
+        {selectedReport && (
+          <button onClick={() => setSelectedReport(null)} className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer">
+            ← Back to Archive List
+          </button>
+        )}
+      </div>
+
+      {!selectedReport ? (
+        <div className="space-y-3">
+          {reports.map((rep) => (
+            <div key={rep.id} className="bg-gray-900 border border-gray-800 p-4 rounded-xl flex justify-between items-center hover:border-emerald-500/50 transition-all">
+              <div className="cursor-pointer flex-1" onClick={() => setSelectedReport(rep)}>
+                <span className="font-semibold text-white block">Optimization Report #{rep.id} ({rep.paperWidth}×{rep.paperHeight}mm)</span>
+                <span className="text-xs text-gray-400">Date: {rep.date} | Sheets: {rep.totalSheets} | Waste: {rep.waste}% | Utilization: {rep.utilization}%</span>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => setSelectedReport(rep)} className="bg-gray-800 hover:bg-gray-700 text-emerald-400 px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer">
+                  View
+                </button>
+                <button onClick={() => alert(`Downloading Report #${rep.id} PDF...`)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 cursor-pointer">
+                  <Download size={14} /> Download PDF
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-6">
+          <div className="flex justify-between items-center border-b border-gray-800 pb-4">
+            <div>
+              <h2 className="text-xl font-bold text-emerald-400">Optimization Report #{selectedReport.id}</h2>
+              <p className="text-xs text-gray-400">Generated on {selectedReport.date} | Status: Verified</p>
+            </div>
+            <button onClick={() => alert(`Downloading Report #${selectedReport.id} PDF...`)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 cursor-pointer">
+              <Download size={16} /> Download PDF Report
             </button>
           </div>
-        ))}
-      </div>
+
+          <div className="grid grid-cols-2 gap-6">
+            <div className="bg-gray-950 p-4 rounded-xl border border-gray-800 space-y-2">
+              <h4 className="text-xs font-semibold text-gray-400 uppercase">Input Configuration</h4>
+              <p className="text-sm text-gray-300">Master Sheet: <span className="text-white font-semibold">{selectedReport.paperWidth} × {selectedReport.paperHeight} mm</span></p>
+              <p className="text-sm text-gray-300">Piece Size: <span className="text-white font-semibold">{selectedReport.pieceWidth} × {selectedReport.pieceHeight} mm</span></p>
+              <p className="text-sm text-gray-300">Requested Quantity: <span className="text-white font-semibold">{selectedReport.quantity} Pieces</span></p>
+            </div>
+            <div className="bg-gray-950 p-4 rounded-xl border border-gray-800 space-y-2">
+              <h4 className="text-xs font-semibold text-gray-400 uppercase">Efficiency Analytics</h4>
+              <p className="text-sm text-gray-300">Sheets Required: <span className="text-emerald-400 font-semibold">{selectedReport.totalSheets} Sheets</span></p>
+              <p className="text-sm text-gray-300">Material Utilization: <span className="text-emerald-400 font-semibold">{selectedReport.utilization}%</span></p>
+              <p className="text-sm text-gray-300">Scrap / Waste: <span className="text-red-400 font-semibold">{selectedReport.waste}%</span></p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
