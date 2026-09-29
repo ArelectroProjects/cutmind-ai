@@ -19,28 +19,22 @@ export default function CutMindApp() {
 
   const [reports, setReports] = useState([
     {
-      id: 26,
-      date: '29 Sep 2026',
+      id: 25,
+      date: '03 May 2026',
+      customerName: 'ABC Paper Ltd.',
+      phone: '+91 9876543210',
+      email: 'info@abcpaper.com',
       paperWidth: 1000,
       paperHeight: 700,
+      paperThickness: 0.2,
+      margin: 5,
+      allowRotation: 'Yes',
       pieceWidth: 200,
       pieceHeight: 150,
       quantity: 20,
       totalSheets: 1,
-      utilization: 85.71,
-      waste: 14.29
-    },
-    {
-      id: 25,
-      date: '28 Sep 2026',
-      paperWidth: 1200,
-      paperHeight: 800,
-      pieceWidth: 300,
-      pieceHeight: 200,
-      quantity: 15,
-      totalSheets: 2,
-      utilization: 91.60,
-      waste: 8.40
+      utilization: 95.0,
+      waste: 5.0
     }
   ]);
 
@@ -77,7 +71,7 @@ export default function CutMindApp() {
   const runMathematicalOptimization = () => {
     if (!isFormValid) return;
 
-    const { paperWidth, paperHeight, pieceWidth, pieceHeight, quantity, allowRotation, margin } = formData;
+    const { paperWidth, paperHeight, pieceWidth, pieceHeight, quantity, allowRotation, margin, paperThickness } = formData;
     const effectiveW = paperWidth - (2 * margin);
     const effectiveH = paperHeight - (2 * margin);
 
@@ -85,31 +79,17 @@ export default function CutMindApp() {
     const fitNormalRows = Math.floor(effectiveH / pieceHeight);
     const countNormal = fitNormalCols * fitNormalRows;
 
-    let fitRotatedCols = 0;
-    let fitRotatedRows = 0;
     let countRotated = 0;
-
     if (allowRotation) {
       const fitRotatedCols1 = Math.floor(effectiveW / pieceHeight);
       const fitRotatedRows1 = Math.floor(effectiveH / pieceWidth);
-      const count1 = fitRotatedCols1 * fitRotatedRows1;
-
-      if (count1 > countNormal) {
-        fitRotatedCols = fitRotatedCols1;
-        fitRotatedRows = fitRotatedRows1;
-        countRotated = count1;
-      }
+      countRotated = fitRotatedCols1 * fitRotatedRows1;
     }
 
     const useRotation = allowRotation && countRotated > countNormal;
     const piecesPerSheet = useRotation ? countRotated : countNormal;
 
     if (piecesPerSheet <= 0) return;
-
-    const cols = useRotation ? fitRotatedCols : fitNormalCols;
-    const rows = useRotation ? fitRotatedRows : fitNormalRows;
-    const pWidth = useRotation ? pieceHeight : pieceWidth;
-    const pHeight = useRotation ? pieceWidth : pieceHeight;
 
     const totalSheetsNeeded = Math.ceil(quantity / piecesPerSheet);
     const sheets = [];
@@ -119,30 +99,30 @@ export default function CutMindApp() {
     for (let s = 0; s < totalSheetsNeeded; s++) {
       const piecesOnThisSheet = Math.min(piecesPerSheet, remainingPiecesToAllocate);
       const sheetRectangles = [];
-
       let currentX = margin;
       let currentY = margin;
       let placedInSheet = 0;
 
-      for (let r = 0; r < rows; r++) {
+      const cols = useRotation ? Math.floor(effectiveW / pieceHeight) : Math.floor(effectiveW / pieceWidth);
+      const pW = useRotation ? pieceHeight : pieceWidth;
+      const pH = useRotation ? pieceWidth : pieceHeight;
+
+      for (let r = 0; r < Math.floor(effectiveH / pH); r++) {
         for (let c = 0; c < cols; c++) {
           if (placedInSheet >= piecesOnThisSheet) break;
-
           sheetRectangles.push({
             id: currentPieceId++,
             x: currentX,
             y: currentY,
-            width: pWidth,
-            height: pHeight,
-            rotated: useRotation,
+            width: pW,
+            height: pH,
             sheetIndex: s + 1
           });
-
-          currentX += pWidth + margin;
+          currentX += pW + margin;
           placedInSheet++;
         }
         currentX = margin;
-        currentY += pHeight + margin;
+        currentY += pH + margin;
         if (placedInSheet >= piecesOnThisSheet) break;
       }
 
@@ -171,6 +151,7 @@ export default function CutMindApp() {
       quantity,
       margin,
       allowRotation,
+      paperThickness,
       piecesPerSheet,
       totalSheets: totalSheetsNeeded,
       sheets
@@ -179,10 +160,16 @@ export default function CutMindApp() {
     setOptimizationResult(newResult);
 
     const newReportItem = {
-      id: reports.length + 27,
+      id: reports.length + 21,
       date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      customerName: 'AR Electro Unit',
+      phone: '+91 9000000000',
+      email: 'contact@arelectro.com',
       paperWidth,
       paperHeight,
+      paperThickness,
+      margin,
+      allowRotation: allowRotation ? 'Yes' : 'No',
       pieceWidth,
       pieceHeight,
       quantity,
@@ -195,7 +182,6 @@ export default function CutMindApp() {
     setActiveTab('result');
   };
 
-  // 100% Working & Easy Print / Save as PDF Function
   const downloadPDF = (reportData) => {
     window.print();
   };
@@ -494,7 +480,7 @@ function ReportsView({ reports, selectedReport, setSelectedReport, downloadPDF }
       <div className="flex justify-between items-center bg-gray-900 border border-gray-800 p-6 rounded-2xl">
         <div>
           <h1 className="text-2xl font-bold text-white">Reports Archive</h1>
-          <p className="text-gray-400 text-sm mt-1">Click on any report to view details or download / save as PDF.</p>
+          <p className="text-gray-400 text-sm mt-1">Click on any report to view professional certificate details or download PDF.</p>
         </div>
         {selectedReport && (
           <button 
@@ -516,7 +502,7 @@ function ReportsView({ reports, selectedReport, setSelectedReport, downloadPDF }
               </div>
               <div className="flex gap-3">
                 <button onClick={() => setSelectedReport(rep)} className="bg-gray-800 hover:bg-gray-700 text-emerald-400 px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer border border-gray-700 transition-all">
-                  View Details
+                  View Certificate
                 </button>
                 <button onClick={() => downloadPDF(rep)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 cursor-pointer shadow-lg shadow-emerald-900/20">
                   <Download size={14} /> Download PDF
@@ -526,36 +512,89 @@ function ReportsView({ reports, selectedReport, setSelectedReport, downloadPDF }
           ))}
         </div>
       ) : (
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 space-y-6 shadow-xl">
-          <div className="flex justify-between items-center border-b border-gray-800 pb-5">
-            <div>
-              <h2 className="text-2xl font-bold text-emerald-400">Optimization Report #{selectedReport.id}</h2>
-              <p className="text-xs text-gray-400 mt-1">Generated on {selectedReport.date} &nbsp;|&nbsp; Status: <span className="text-emerald-400 font-semibold">Verified Certificate</span></p>
+        /* Professional Certificate View (Matching User Screenshot Layout) */
+        <div className="bg-white text-gray-900 border border-gray-300 rounded-2xl p-10 space-y-8 shadow-2xl relative">
+          
+          {/* Top Header */}
+          <div className="flex justify-between items-start border-b border-gray-200 pb-6">
+            <div className="flex items-center gap-3">
+              <div className="bg-emerald-600 p-3 rounded-xl text-white font-bold text-xl">✂️</div>
+              <div>
+                <h1 className="text-2xl font-black tracking-tight text-gray-900">CutMind <span className="text-emerald-600">AI</span></h1>
+                <p className="text-xs text-gray-500 font-medium">AI-Based Paper Cutting Optimization System</p>
+              </div>
             </div>
-            <button onClick={() => downloadPDF(selectedReport)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 cursor-pointer shadow-lg shadow-emerald-900/20">
-              <Download size={16} /> Download PDF Report
+            <div className="text-right">
+              <h2 className="text-xl font-bold text-gray-800">Optimization Report</h2>
+              <p className="text-xs text-gray-500 mt-0.5">Report ID: #{selectedReport.id}</p>
+              <p className="text-xs text-gray-500">Date: {selectedReport.date}</p>
+            </div>
+          </div>
+
+          {/* Middle 3 Columns (Customer Details, Summary, Results) */}
+          <div className="grid grid-cols-3 gap-6">
+            
+            {/* Customer Details Box */}
+            <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700 border-b border-gray-200 pb-2">Customer Details</h3>
+              <div className="text-xs space-y-2">
+                <p className="flex justify-between"><span className="text-gray-500">Customer Name:</span> <span className="font-semibold text-gray-900">{selectedReport.customerName}</span></p>
+                <p className="flex justify-between"><span className="text-gray-500">Phone:</span> <span className="font-semibold text-gray-900">{selectedReport.phone}</span></p>
+                <p className="flex justify-between"><span className="text-gray-500">Email:</span> <span className="font-semibold text-gray-900">{selectedReport.email}</span></p>
+              </div>
+            </div>
+
+            {/* Optimization Summary Box */}
+            <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700 border-b border-gray-200 pb-2">Optimization Summary</h3>
+              <div className="text-xs space-y-1.5">
+                <p className="flex justify-between"><span className="text-gray-500">Paper Size:</span> <span className="font-semibold text-gray-900">{selectedReport.paperWidth} × {selectedReport.paperHeight} mm</span></p>
+                <p className="flex justify-between"><span className="text-gray-500">Piece Size:</span> <span className="font-semibold text-gray-900">{selectedReport.pieceWidth} × {selectedReport.pieceHeight} mm</span></p>
+                <p className="flex justify-between"><span className="text-gray-500">Quantity:</span> <span className="font-semibold text-gray-900">{selectedReport.quantity} Pieces</span></p>
+                <p className="flex justify-between"><span className="text-gray-500">Paper Thickness:</span> <span className="font-semibold text-gray-900">{selectedReport.paperThickness} mm</span></p>
+                <p className="flex justify-between"><span className="text-gray-500">Cutting Margin:</span> <span className="font-semibold text-gray-900">{selectedReport.margin} mm</span></p>
+                <p className="flex justify-between"><span className="text-gray-500">Allow Rotation:</span> <span className="font-semibold text-gray-900">{selectedReport.allowRotation}</span></p>
+              </div>
+            </div>
+
+            {/* Results & Mini Preview Box */}
+            <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700 border-b border-gray-200 pb-2">Results & Layout</h3>
+              <div className="text-xs space-y-1.5">
+                <p className="flex justify-between"><span className="text-gray-500">Sheets Required:</span> <span className="font-bold text-emerald-600">{selectedReport.totalSheets} Sheets</span></p>
+                <p className="flex justify-between"><span className="text-gray-500">Material Used:</span> <span className="font-bold text-emerald-600">{selectedReport.utilization}%</span></p>
+                <p className="flex justify-between"><span className="text-gray-500">Waste:</span> <span className="font-bold text-red-500">{selectedReport.waste}%</span></p>
+                <p className="flex justify-between"><span className="text-gray-500">Efficiency:</span> <span className="font-bold text-emerald-600">{selectedReport.utilization}%</span></p>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Bottom Conclusion & Signature */}
+          <div className="pt-4 border-t border-gray-200 flex justify-between items-end">
+            <div className="space-y-1 max-w-lg">
+              <h4 className="text-xs font-bold text-gray-800 uppercase">Conclusion</h4>
+              <p className="text-xs text-gray-600 leading-relaxed">
+                The layout has been optimized using AI deterministic bin-packing algorithms to reduce paper waste and maximize material usage.
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="h-10 border-b border-gray-400 w-48 mb-1"></div>
+              <p className="text-xs font-bold text-gray-800">Authorized Sign</p>
+              <p className="text-[10px] text-gray-500">AR Electro Projects</p>
+            </div>
+          </div>
+
+          {/* Action Buttons at Bottom */}
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            <button onClick={() => setSelectedReport(null)} className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2.5 rounded-xl text-xs font-semibold cursor-pointer">
+              Close Certificate
+            </button>
+            <button onClick={() => downloadPDF(selectedReport)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 cursor-pointer shadow-md">
+              <Download size={14} /> Print / Save as PDF
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-6 pt-2">
-            <div className="bg-gray-950 p-6 rounded-2xl border border-gray-800 space-y-3">
-              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Input Configuration</h4>
-              <div className="space-y-2 pt-1 text-sm">
-                <p className="text-gray-300 flex justify-between"><span>Master Sheet Size:</span> <span className="text-white font-bold">{selectedReport.paperWidth} × {selectedReport.paperHeight} mm</span></p>
-                <p className="text-gray-300 flex justify-between"><span>Piece Dimensions:</span> <span className="text-white font-bold">{selectedReport.pieceWidth} × {selectedReport.pieceHeight} mm</span></p>
-                <p className="text-gray-300 flex justify-between"><span>Requested Quantity:</span> <span className="text-white font-bold">{selectedReport.quantity} Pieces</span></p>
-              </div>
-            </div>
-            
-            <div className="bg-gray-950 p-6 rounded-2xl border border-gray-800 space-y-3">
-              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Efficiency Analytics</h4>
-              <div className="space-y-2 pt-1 text-sm">
-                <p className="text-gray-300 flex justify-between"><span>Total Sheets Required:</span> <span className="text-emerald-400 font-bold">{selectedReport.totalSheets} Sheets</span></p>
-                <p className="text-gray-300 flex justify-between"><span>Material Utilization:</span> <span className="text-emerald-400 font-bold">{selectedReport.utilization}%</span></p>
-                <p className="text-gray-300 flex justify-between"><span>Scrap / Waste Area:</span> <span className="text-red-400 font-bold">{selectedReport.waste}%</span></p>
-              </div>
-            </div>
-          </div>
         </div>
       )}
     </div>
