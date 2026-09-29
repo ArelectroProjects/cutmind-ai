@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, PlusCircle, FileText, User, Settings, LogOut, Download, AlertTriangle, CheckCircle, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, FileText, User, Settings, LogOut, Download, AlertTriangle, CheckCircle, ArrowLeft, Edit3, Save } from 'lucide-react';
 
 export default function CutMindApp() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -19,26 +19,28 @@ export default function CutMindApp() {
 
   const [reports, setReports] = useState([
     {
-      id: 25,
-      date: '03 May 2026',
-      customerName: 'ABC Paper Ltd.',
-      phone: '+91 9876543210',
-      email: 'info@abcpaper.com',
-      paperWidth: 1000,
+      id: 23,
+      date: '29 Sept 2026',
+      customerName: 'AR Electro Unit',
+      phone: '+91 9000000000',
+      email: 'contact@arelectro.com',
+      paperWidth: 1759,
       paperHeight: 700,
       paperThickness: 0.2,
       margin: 5,
       allowRotation: 'Yes',
-      pieceWidth: 200,
+      pieceWidth: 1007,
       pieceHeight: 150,
       quantity: 20,
-      totalSheets: 1,
-      utilization: 95.0,
-      waste: 5.0
+      totalSheets: 5,
+      utilization: 49.07,
+      waste: 50.93
     }
   ]);
 
   const [selectedReport, setSelectedReport] = useState(null);
+  const [isEditingCustomer, setIsEditingCustomer] = useState(false);
+  const [editCustomerData, setEditCustomerData] = useState({ customerName: '', phone: '', email: '' });
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -160,7 +162,7 @@ export default function CutMindApp() {
     setOptimizationResult(newResult);
 
     const newReportItem = {
-      id: reports.length + 21,
+      id: reports.length + 20,
       date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
       customerName: 'AR Electro Unit',
       phone: '+91 9000000000',
@@ -182,13 +184,23 @@ export default function CutMindApp() {
     setActiveTab('result');
   };
 
-  const downloadPDF = (reportData) => {
-    window.print();
+  const handleSelectReport = (rep) => {
+    setSelectedReport(rep);
+    setEditCustomerData({ customerName: rep.customerName, phone: rep.phone, email: rep.email });
+    setIsEditingCustomer(false);
+  };
+
+  const saveCustomerDetails = () => {
+    const updatedReports = reports.map(r => r.id === selectedReport.id ? { ...r, ...editCustomerData } : r);
+    setReports(updatedReports);
+    setSelectedReport({ ...selectedReport, ...editCustomerData });
+    setIsEditingCustomer(false);
   };
 
   return (
     <div className="flex h-screen bg-gray-950 text-gray-100 font-sans">
-      <aside className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col justify-between p-4">
+      {/* Sidebar hidden during print */}
+      <aside className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col justify-between p-4 print:hidden">
         <div>
           <div className="flex items-center gap-3 px-2 mb-8">
             <div className="bg-emerald-500 p-2 rounded-lg text-black font-bold">✂️</div>
@@ -213,8 +225,19 @@ export default function CutMindApp() {
       <main className="flex-1 overflow-y-auto p-10">
         {activeTab === 'dashboard' && <DashboardView setActiveTab={setActiveTab} />}
         {activeTab === 'new' && <NewOptimizationView formData={formData} handleInputChange={handleInputChange} runMathematicalOptimization={runMathematicalOptimization} isFormValid={isFormValid} canFitAtLeastOne={canFitAtLeastOne} isUsableValid={isUsableValid} />}
-        {activeTab === 'result' && <ResultView optimizationResult={optimizationResult} setActiveTab={setActiveTab} downloadPDF={downloadPDF} />}
-        {activeTab === 'reports' && <ReportsView reports={reports} selectedReport={selectedReport} setSelectedReport={setSelectedReport} downloadPDF={downloadPDF} />}
+        {activeTab === 'result' && <ResultView optimizationResult={optimizationResult} setActiveTab={setActiveTab} />}
+        {activeTab === 'reports' && (
+          <ReportsView 
+            reports={reports} 
+            selectedReport={selectedReport} 
+            setSelectedReport={handleSelectReport} 
+            isEditingCustomer={isEditingCustomer}
+            setIsEditingCustomer={setIsEditingCustomer}
+            editCustomerData={editCustomerData}
+            setEditCustomerData={setEditCustomerData}
+            saveCustomerDetails={saveCustomerDetails}
+          />
+        )}
         {activeTab === 'profile' && <ProfileView />}
         {activeTab === 'settings' && <SettingsView />}
       </main>
@@ -345,7 +368,7 @@ function NewOptimizationView({ formData, handleInputChange, runMathematicalOptim
   );
 }
 
-function ResultView({ optimizationResult, setActiveTab, downloadPDF }) {
+function ResultView({ optimizationResult, setActiveTab }) {
   const [activeSheetTab, setActiveSheetTab] = useState(0);
 
   const result = optimizationResult || {
@@ -375,8 +398,8 @@ function ResultView({ optimizationResult, setActiveTab, downloadPDF }) {
           <button onClick={() => setActiveTab('new')} className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2.5 rounded-xl font-semibold text-sm cursor-pointer">
             Modify Inputs
           </button>
-          <button onClick={() => downloadPDF({ id: 99, date: 'Today', ...result, utilization: currentSheet.utilization, waste: currentSheet.waste })} className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 cursor-pointer shadow-lg shadow-emerald-900/20">
-            <Download size={16} /> Download PDF Report
+          <button onClick={() => window.print()} className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 cursor-pointer shadow-lg shadow-emerald-900/20">
+            <Download size={16} /> Print / Save as PDF
           </button>
         </div>
       </div>
@@ -474,13 +497,13 @@ function ResultView({ optimizationResult, setActiveTab, downloadPDF }) {
   );
 }
 
-function ReportsView({ reports, selectedReport, setSelectedReport, downloadPDF }) {
+function ReportsView({ reports, selectedReport, setSelectedReport, isEditingCustomer, setIsEditingCustomer, editCustomerData, setEditCustomerData, saveCustomerDetails }) {
   return (
     <div className="space-y-6 max-w-6xl">
-      <div className="flex justify-between items-center bg-gray-900 border border-gray-800 p-6 rounded-2xl">
+      <div className="flex justify-between items-center bg-gray-900 border border-gray-800 p-6 rounded-2xl print:hidden">
         <div>
           <h1 className="text-2xl font-bold text-white">Reports Archive</h1>
-          <p className="text-gray-400 text-sm mt-1">Click on any report to view professional certificate details or download PDF.</p>
+          <p className="text-gray-400 text-sm mt-1">Click on any report to view certificate details or edit customer info.</p>
         </div>
         {selectedReport && (
           <button 
@@ -498,21 +521,18 @@ function ReportsView({ reports, selectedReport, setSelectedReport, downloadPDF }
             <div key={rep.id} className="bg-gray-900 border border-gray-800 p-5 rounded-2xl flex justify-between items-center hover:border-emerald-500/50 transition-all shadow-md">
               <div className="cursor-pointer flex-1" onClick={() => setSelectedReport(rep)}>
                 <span className="font-bold text-white text-base block hover:text-emerald-400 transition-colors">Optimization Report #{rep.id} ({rep.paperWidth}×{rep.paperHeight}mm)</span>
-                <span className="text-xs text-gray-400 mt-1 block">Date: {rep.date} &nbsp;|&nbsp; Sheets Required: <strong className="text-emerald-400">{rep.totalSheets}</strong> &nbsp;|&nbsp; Waste: <strong className="text-red-400">{rep.waste}%</strong> &nbsp;|&nbsp; Utilization: <strong className="text-emerald-400">{rep.utilization}%</strong></span>
+                <span className="text-xs text-gray-400 mt-1 block">Customer: <strong className="text-gray-300">{rep.customerName}</strong> &nbsp;|&nbsp; Sheets: <strong className="text-emerald-400">{rep.totalSheets}</strong> &nbsp;|&nbsp; Waste: <strong className="text-red-400">{rep.waste}%</strong></span>
               </div>
               <div className="flex gap-3">
                 <button onClick={() => setSelectedReport(rep)} className="bg-gray-800 hover:bg-gray-700 text-emerald-400 px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer border border-gray-700 transition-all">
                   View Certificate
-                </button>
-                <button onClick={() => downloadPDF(rep)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 cursor-pointer shadow-lg shadow-emerald-900/20">
-                  <Download size={14} /> Download PDF
                 </button>
               </div>
             </div>
           ))}
         </div>
       ) : (
-        /* Professional Certificate View (Matching User Screenshot Layout) */
+        /* Printable Professional Certificate */
         <div className="bg-white text-gray-900 border border-gray-300 rounded-2xl p-10 space-y-8 shadow-2xl relative">
           
           {/* Top Header */}
@@ -531,17 +551,55 @@ function ReportsView({ reports, selectedReport, setSelectedReport, downloadPDF }
             </div>
           </div>
 
-          {/* Middle 3 Columns (Customer Details, Summary, Results) */}
+          {/* Middle 3 Columns */}
           <div className="grid grid-cols-3 gap-6">
             
-            {/* Customer Details Box */}
+            {/* Customer Details Box with Edit & Save */}
             <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700 border-b border-gray-200 pb-2">Customer Details</h3>
-              <div className="text-xs space-y-2">
-                <p className="flex justify-between"><span className="text-gray-500">Customer Name:</span> <span className="font-semibold text-gray-900">{selectedReport.customerName}</span></p>
-                <p className="flex justify-between"><span className="text-gray-500">Phone:</span> <span className="font-semibold text-gray-900">{selectedReport.phone}</span></p>
-                <p className="flex justify-between"><span className="text-gray-500">Email:</span> <span className="font-semibold text-gray-900">{selectedReport.email}</span></p>
+              <div className="flex justify-between items-center border-b border-gray-200 pb-2">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700">Customer Details</h3>
+                {!isEditingCustomer ? (
+                  <button onClick={() => setIsEditingCustomer(true)} className="text-emerald-600 hover:text-emerald-700 text-xs font-semibold flex items-center gap-1 print:hidden cursor-pointer">
+                    <Edit3 size={12} /> Edit
+                  </button>
+                ) : (
+                  <button onClick={saveCustomerDetails} className="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-semibold flex items-center gap-1 print:hidden cursor-pointer">
+                    <Save size={10} /> Save
+                  </button>
+                )}
               </div>
+
+              {!isEditingCustomer ? (
+                <div className="text-xs space-y-2">
+                  <p className="flex justify-between"><span className="text-gray-500">Name:</span> <span className="font-semibold text-gray-900">{selectedReport.customerName}</span></p>
+                  <p className="flex justify-between"><span className="text-gray-500">Phone:</span> <span className="font-semibold text-gray-900">{selectedReport.phone}</span></p>
+                  <p className="flex justify-between"><span className="text-gray-500">Email:</span> <span className="font-semibold text-gray-900">{selectedReport.email}</span></p>
+                </div>
+              ) : (
+                <div className="text-xs space-y-2 print:hidden">
+                  <input 
+                    type="text" 
+                    value={editCustomerData.customerName} 
+                    onChange={(e) => setEditCustomerData({...editCustomerData, customerName: e.target.value})} 
+                    className="w-full bg-white border border-gray-300 rounded px-2 py-1 text-gray-900 text-xs" 
+                    placeholder="Customer Name"
+                  />
+                  <input 
+                    type="text" 
+                    value={editCustomerData.phone} 
+                    onChange={(e) => setEditCustomerData({...editCustomerData, phone: e.target.value})} 
+                    className="w-full bg-white border border-gray-300 rounded px-2 py-1 text-gray-900 text-xs" 
+                    placeholder="Phone"
+                  />
+                  <input 
+                    type="text" 
+                    value={editCustomerData.email} 
+                    onChange={(e) => setEditCustomerData({...editCustomerData, email: e.target.value})} 
+                    className="w-full bg-white border border-gray-300 rounded px-2 py-1 text-gray-900 text-xs" 
+                    placeholder="Email"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Optimization Summary Box */}
@@ -557,7 +615,7 @@ function ReportsView({ reports, selectedReport, setSelectedReport, downloadPDF }
               </div>
             </div>
 
-            {/* Results & Mini Preview Box */}
+            {/* Results & Layout Box */}
             <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700 border-b border-gray-200 pb-2">Results & Layout</h3>
               <div className="text-xs space-y-1.5">
@@ -585,12 +643,12 @@ function ReportsView({ reports, selectedReport, setSelectedReport, downloadPDF }
             </div>
           </div>
 
-          {/* Action Buttons at Bottom */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+          {/* Action Buttons (Hidden during Print) */}
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 print:hidden">
             <button onClick={() => setSelectedReport(null)} className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2.5 rounded-xl text-xs font-semibold cursor-pointer">
               Close Certificate
             </button>
-            <button onClick={() => downloadPDF(selectedReport)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 cursor-pointer shadow-md">
+            <button onClick={() => window.print()} className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 cursor-pointer shadow-md">
               <Download size={14} /> Print / Save as PDF
             </button>
           </div>
