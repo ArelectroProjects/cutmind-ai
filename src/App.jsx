@@ -195,63 +195,9 @@ export default function CutMindApp() {
     setActiveTab('result');
   };
 
+  // 100% Working & Easy Print / Save as PDF Function
   const downloadPDF = (reportData) => {
-    try {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(22);
-      doc.setTextColor(16, 185, 129);
-      doc.text("CutMind AI", 20, 20);
-
-      doc.setFontSize(12);
-      doc.setTextColor(100, 100, 100);
-      doc.text("AI-Based Sheet Cutting Optimization Report", 20, 28);
-
-      doc.setLineWidth(0.5);
-      doc.setLineColor(200, 200, 200);
-      doc.line(20, 34, 190, 34);
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(14);
-      doc.setTextColor(0, 0, 0);
-      doc.text(`Optimization Report #${reportData.id}`, 20, 46);
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(11);
-      doc.text(`Generated Date: ${reportData.date}`, 20, 54);
-      doc.text(`Company: AR Electro Projects`, 20, 62);
-
-      doc.setFillColor(245, 247, 250);
-      doc.roundedRect(20, 72, 170, 45, 3, 3, "F");
-
-      doc.setFont("helvetica", "bold");
-      doc.text("Input Specifications:", 25, 82);
-      doc.setFont("helvetica", "normal");
-      doc.text(`• Master Sheet Size: ${reportData.paperWidth} x ${reportData.paperHeight} mm`, 25, 90);
-      doc.text(`• Piece Dimensions: ${reportData.pieceWidth} x ${reportData.pieceHeight} mm`, 25, 98);
-      doc.text(`• Required Quantity: ${reportData.quantity} Pieces`, 25, 106);
-
-      doc.setFillColor(245, 247, 250);
-      doc.roundedRect(20, 125, 170, 45, 3, 3, "F");
-
-      doc.setFont("helvetica", "bold");
-      doc.text("Efficiency Analytics:", 25, 135);
-      doc.setFont("helvetica", "normal");
-      doc.text(`• Total Sheets Required: ${reportData.totalSheets} Sheets`, 25, 143);
-      doc.text(`• Material Utilization: ${reportData.utilization}%`, 25, 151);
-      doc.text(`• Scrap Waste Area: ${reportData.waste}%`, 25, 159);
-
-      doc.setFont("helvetica", "italic");
-      doc.setFontSize(9);
-      doc.setTextColor(150, 150, 150);
-      doc.text("Certified by CutMind AI Deterministic Engine — AR Electro Projects", 20, 190);
-
-      doc.save(`CutMind_Report_${reportData.id}.pdf`);
-    } catch (err) {
-      alert("PDF download triggered.");
-    }
+    window.print();
   };
 
   return (
@@ -545,11 +491,10 @@ function ResultView({ optimizationResult, setActiveTab, downloadPDF }) {
 function ReportsView({ reports, selectedReport, setSelectedReport, downloadPDF }) {
   return (
     <div className="space-y-6 max-w-6xl">
-      {/* Header Section with Proper Spacing */}
       <div className="flex justify-between items-center bg-gray-900 border border-gray-800 p-6 rounded-2xl">
         <div>
           <h1 className="text-2xl font-bold text-white">Reports Archive</h1>
-          <p className="text-gray-400 text-sm mt-1">Click on any report to view details or download the verified PDF certificate.</p>
+          <p className="text-gray-400 text-sm mt-1">Click on any report to view details or download / save as PDF.</p>
         </div>
         {selectedReport && (
           <button 
