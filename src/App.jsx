@@ -732,7 +732,7 @@ function SettingsView({ darkMode, setDarkMode, cardBg }) {
               darkMode ? 'bg-emerald-600 text-white shadow-lg' : 'bg-gray-800 text-white'
             }`}
           >
-            {darkMode ? '🌙 Dark ON' : '☀️ Light ON'}
+            {darkMode ? '🌙 Dark ON' : '☀️ Light ffN'}
           </button>
         </div>
       </div>
