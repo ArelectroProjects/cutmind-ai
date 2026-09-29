@@ -22,7 +22,6 @@ export default function CutMindApp() {
     {
       id: 22,
       date: '29 Sept 2026',
-      time: '12:19 PM',
       customerName: 'AR Electro Projects',
       phone: '+91 9000000000',
       email: 'rajeshbhaichipa-1@okhdfcbank',
@@ -167,7 +166,6 @@ export default function CutMindApp() {
     const newReportItem = {
       id: reports.length + 20,
       date: now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-      time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       customerName: 'AR Electro Projects',
       phone: '+91 9000000000',
       email: 'rajeshbhaichipa-1@okhdfcbank',
@@ -210,8 +208,8 @@ export default function CutMindApp() {
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           @page {
-            margin: 10mm;
-            size: auto;
+            margin: 5mm;
+            size: portrait;
           }
           body {
             background-color: white !important;
@@ -219,6 +217,12 @@ export default function CutMindApp() {
           }
           .print\\:hidden {
             display: none !important;
+          }
+          .certificate-box {
+            box-shadow: none !important;
+            border: none !important;
+            width: 100% !important;
+            padding: 10px !important;
           }
         }
       `}} />
@@ -560,15 +564,9 @@ function ReportsView({ reports, selectedReport, setSelectedReport, isEditingCust
           ))}
         </div>
       ) : (
-        /* Printable Professional Certificate with Built-in Date and Time */
-        <div className="bg-white text-gray-900 border border-gray-300 rounded-2xl p-10 space-y-8 shadow-2xl relative print:m-0 print:border-none print:shadow-none print:w-full print:p-0">
+        /* Printable Professional Certificate */
+        <div className="certificate-box bg-white text-gray-900 border border-gray-300 rounded-2xl p-10 space-y-8 shadow-2xl relative">
           
-          {/* Top Timestamp inside certificate (Replaces browser default header) */}
-          <div className="flex justify-between items-center text-[11px] text-gray-400 border-b border-gray-100 pb-2">
-            <span>{selectedReport.date} {selectedReport.time}</span>
-            <span>CutMind AI Verified System</span>
-          </div>
-
           {/* Top Header */}
           <div className="flex justify-between items-start border-b border-gray-200 pb-6">
             <div className="flex items-center gap-3">
@@ -656,7 +654,7 @@ function ReportsView({ reports, selectedReport, setSelectedReport, isEditingCust
                 <p className="flex justify-between"><span className="text-gray-500">Sheets Required:</span> <span className="font-bold text-emerald-600">{selectedReport.totalSheets} Sheets</span></p>
                 <p className="flex justify-between"><span className="text-gray-500">Material Used:</span> <span className="font-bold text-emerald-600">{selectedReport.utilization}%</span></p>
                 <p className="flex justify-between"><span className="text-gray-500">Waste:</span> <span className="font-bold text-red-500">{selectedReport.waste}%</span></p>
-                <p className="flex justify-between"><span className="font-bold text-emerald-600">Efficiency:</span> <span className="font-bold text-emerald-600">{selectedReport.utilization}%</span></p>
+                <p className="flex justify-between"><span className="text-gray-500">Efficiency:</span> <span className="font-bold text-emerald-600">{selectedReport.utilization}%</span></p>
               </div>
             </div>
 
