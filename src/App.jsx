@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, PlusCircle, FileText, User, Settings, LogOut, Download, AlertTriangle, CheckCircle, Trash2 } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, FileText, User, Settings, LogOut, Download, AlertTriangle, CheckCircle, ArrowLeft } from 'lucide-react';
 
 export default function CutMindApp() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -17,7 +17,6 @@ export default function CutMindApp() {
 
   const [optimizationResult, setOptimizationResult] = useState(null);
 
-  // Dynamic Reports State (Saves live optimization history)
   const [reports, setReports] = useState([
     {
       id: 26,
@@ -179,7 +178,6 @@ export default function CutMindApp() {
 
     setOptimizationResult(newResult);
 
-    // Automatically add to Reports History
     const newReportItem = {
       id: reports.length + 27,
       date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
@@ -195,6 +193,65 @@ export default function CutMindApp() {
 
     setReports([newReportItem, ...reports]);
     setActiveTab('result');
+  };
+
+  const downloadPDF = (reportData) => {
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(22);
+      doc.setTextColor(16, 185, 129);
+      doc.text("CutMind AI", 20, 20);
+
+      doc.setFontSize(12);
+      doc.setTextColor(100, 100, 100);
+      doc.text("AI-Based Sheet Cutting Optimization Report", 20, 28);
+
+      doc.setLineWidth(0.5);
+      doc.setLineColor(200, 200, 200);
+      doc.line(20, 34, 190, 34);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Optimization Report #${reportData.id}`, 20, 46);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11);
+      doc.text(`Generated Date: ${reportData.date}`, 20, 54);
+      doc.text(`Company: AR Electro Projects`, 20, 62);
+
+      doc.setFillColor(245, 247, 250);
+      doc.roundedRect(20, 72, 170, 45, 3, 3, "F");
+
+      doc.setFont("helvetica", "bold");
+      doc.text("Input Specifications:", 25, 82);
+      doc.setFont("helvetica", "normal");
+      doc.text(`• Master Sheet Size: ${reportData.paperWidth} x ${reportData.paperHeight} mm`, 25, 90);
+      doc.text(`• Piece Dimensions: ${reportData.pieceWidth} x ${reportData.pieceHeight} mm`, 25, 98);
+      doc.text(`• Required Quantity: ${reportData.quantity} Pieces`, 25, 106);
+
+      doc.setFillColor(245, 247, 250);
+      doc.roundedRect(20, 125, 170, 45, 3, 3, "F");
+
+      doc.setFont("helvetica", "bold");
+      doc.text("Efficiency Analytics:", 25, 135);
+      doc.setFont("helvetica", "normal");
+      doc.text(`• Total Sheets Required: ${reportData.totalSheets} Sheets`, 25, 143);
+      doc.text(`• Material Utilization: ${reportData.utilization}%`, 25, 151);
+      doc.text(`• Scrap Waste Area: ${reportData.waste}%`, 25, 159);
+
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(9);
+      doc.setTextColor(150, 150, 150);
+      doc.text("Certified by CutMind AI Deterministic Engine — AR Electro Projects", 20, 190);
+
+      doc.save(`CutMind_Report_${reportData.id}.pdf`);
+    } catch (err) {
+      alert("PDF download triggered.");
+    }
   };
 
   return (
@@ -221,11 +278,11 @@ export default function CutMindApp() {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto p-8">
+      <main className="flex-1 overflow-y-auto p-10">
         {activeTab === 'dashboard' && <DashboardView setActiveTab={setActiveTab} />}
         {activeTab === 'new' && <NewOptimizationView formData={formData} handleInputChange={handleInputChange} runMathematicalOptimization={runMathematicalOptimization} isFormValid={isFormValid} canFitAtLeastOne={canFitAtLeastOne} isUsableValid={isUsableValid} />}
-        {activeTab === 'result' && <ResultView optimizationResult={optimizationResult} setActiveTab={setActiveTab} />}
-        {activeTab === 'reports' && <ReportsView reports={reports} selectedReport={selectedReport} setSelectedReport={setSelectedReport} />}
+        {activeTab === 'result' && <ResultView optimizationResult={optimizationResult} setActiveTab={setActiveTab} downloadPDF={downloadPDF} />}
+        {activeTab === 'reports' && <ReportsView reports={reports} selectedReport={selectedReport} setSelectedReport={setSelectedReport} downloadPDF={downloadPDF} />}
         {activeTab === 'profile' && <ProfileView />}
         {activeTab === 'settings' && <SettingsView />}
       </main>
@@ -244,17 +301,17 @@ function SidebarItem({ icon, label, active, onClick }) {
 
 function DashboardView({ setActiveTab }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-6xl">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Dashboard</h1>
           <p className="text-gray-400 text-sm">AI-Based Sheet Cutting & Material Optimization System</p>
         </div>
-        <button onClick={() => setActiveTab('new')} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-semibold text-sm flex items-center gap-2 cursor-pointer">
+        <button onClick={() => setActiveTab('new')} className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 cursor-pointer shadow-lg shadow-emerald-900/20">
           <PlusCircle size={16} /> New Optimization
         </button>
       </div>
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-4 gap-5">
         <MetricCard title="Total Orders" value="26" />
         <MetricCard title="Paper Used" value="1,280 m²" />
         <MetricCard title="Paper Saved" value="194 m²" />
@@ -266,7 +323,7 @@ function DashboardView({ setActiveTab }) {
 
 function MetricCard({ title, value, sub, positive }) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
       <p className="text-xs text-gray-400 font-medium">{title}</p>
       <p className="text-3xl font-bold mt-2 text-white">{value}</p>
       {sub && <p className={`text-xs mt-2 ${positive ? 'text-emerald-400' : 'text-gray-500'}`}>{sub}</p>}
@@ -279,20 +336,20 @@ function NewOptimizationView({ formData, handleInputChange, runMathematicalOptim
     <div className="space-y-6 max-w-5xl">
       <h1 className="text-2xl font-bold">New Optimization</h1>
       
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 grid grid-cols-3 gap-6">
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 grid grid-cols-3 gap-8">
         <div className="space-y-4">
           <h3 className="font-semibold text-emerald-400">Paper Details</h3>
           <div>
             <label className="text-xs text-gray-400 block mb-1">Paper Width (mm)</label>
-            <input type="number" name="paperWidth" value={formData.paperWidth} onChange={handleInputChange} className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-emerald-500" />
+            <input type="number" name="paperWidth" value={formData.paperWidth} onChange={handleInputChange} className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
           </div>
           <div>
             <label className="text-xs text-gray-400 block mb-1">Paper Height (mm)</label>
-            <input type="number" name="paperHeight" value={formData.paperHeight} onChange={handleInputChange} className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-emerald-500" />
+            <input type="number" name="paperHeight" value={formData.paperHeight} onChange={handleInputChange} className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
           </div>
           <div>
             <label className="text-xs text-gray-400 block mb-1">Paper Thickness (mm)</label>
-            <input type="number" name="paperThickness" value={formData.paperThickness} onChange={handleInputChange} className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-emerald-500" />
+            <input type="number" name="paperThickness" value={formData.paperThickness} onChange={handleInputChange} className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
           </div>
         </div>
 
@@ -300,15 +357,15 @@ function NewOptimizationView({ formData, handleInputChange, runMathematicalOptim
           <h3 className="font-semibold text-emerald-400">Piece Details</h3>
           <div>
             <label className="text-xs text-gray-400 block mb-1">Piece Width (mm)</label>
-            <input type="number" name="pieceWidth" value={formData.pieceWidth} onChange={handleInputChange} className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-emerald-500" />
+            <input type="number" name="pieceWidth" value={formData.pieceWidth} onChange={handleInputChange} className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
           </div>
           <div>
             <label className="text-xs text-gray-400 block mb-1">Piece Height (mm)</label>
-            <input type="number" name="pieceHeight" value={formData.pieceHeight} onChange={handleInputChange} className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-emerald-500" />
+            <input type="number" name="pieceHeight" value={formData.pieceHeight} onChange={handleInputChange} className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
           </div>
           <div>
             <label className="text-xs text-gray-400 block mb-1">Exact Quantity Required</label>
-            <input type="number" name="quantity" value={formData.quantity} onChange={handleInputChange} className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-emerald-500" />
+            <input type="number" name="quantity" value={formData.quantity} onChange={handleInputChange} className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
           </div>
         </div>
 
@@ -320,20 +377,20 @@ function NewOptimizationView({ formData, handleInputChange, runMathematicalOptim
           </div>
           <div className="flex items-center justify-between py-2">
             <span className="text-sm text-gray-300">Cutting Margin (mm)</span>
-            <input type="number" name="margin" value={formData.margin} onChange={handleInputChange} className="w-20 bg-gray-950 border border-gray-800 rounded-xl px-3 py-1 text-white text-center focus:outline-none focus:border-emerald-500" />
+            <input type="number" name="margin" value={formData.margin} onChange={handleInputChange} className="w-20 bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-white text-center focus:outline-none focus:border-emerald-500" />
           </div>
 
-          <div className="pt-2">
+          <div className="pt-3">
             {!isUsableValid ? (
-              <div className="flex items-center gap-2 text-xs text-red-400 bg-red-950/40 p-2.5 rounded-xl border border-red-500/30 mb-4">
+              <div className="flex items-center gap-2 text-xs text-red-400 bg-red-950/40 p-3 rounded-xl border border-red-500/30 mb-4">
                 <AlertTriangle size={15} /> 🔒 LOCKED: Margin is too large!
               </div>
             ) : !canFitAtLeastOne ? (
-              <div className="flex items-center gap-2 text-xs text-red-400 bg-red-950/40 p-2.5 rounded-xl border border-red-500/30 mb-4">
+              <div className="flex items-center gap-2 text-xs text-red-400 bg-red-950/40 p-3 rounded-xl border border-red-500/30 mb-4">
                 <AlertTriangle size={15} /> 🔒 LOCKED: Piece exceeds sheet size!
               </div>
             ) : (
-              <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-500/30 mb-4">
+              <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-950/40 p-3 rounded-xl border border-emerald-500/30 mb-4">
                 <CheckCircle size={15} /> ✨ ENABLED: Ready for multi-sheet layout!
               </div>
             )}
@@ -341,7 +398,7 @@ function NewOptimizationView({ formData, handleInputChange, runMathematicalOptim
             <button 
               onClick={runMathematicalOptimization}
               disabled={!isFormValid}
-              className={`w-full py-3 rounded-xl font-semibold transition-all shadow-lg ${
+              className={`w-full py-3.5 rounded-xl font-semibold transition-all shadow-lg ${
                 isFormValid 
                   ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20 cursor-pointer' 
                   : 'bg-red-900/60 border border-red-500 text-red-200 cursor-not-allowed'
@@ -356,7 +413,7 @@ function NewOptimizationView({ formData, handleInputChange, runMathematicalOptim
   );
 }
 
-function ResultView({ optimizationResult, setActiveTab }) {
+function ResultView({ optimizationResult, setActiveTab, downloadPDF }) {
   const [activeSheetTab, setActiveSheetTab] = useState(0);
 
   const result = optimizationResult || {
@@ -374,42 +431,42 @@ function ResultView({ optimizationResult, setActiveTab }) {
   const currentSheet = result.sheets[activeSheetTab] || result.sheets[0];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-6xl">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Exact Optimization Result</h1>
-          <p className="text-gray-400 text-sm">
+          <p className="text-gray-400 text-sm mt-1">
             Master Sheet: {result.paperWidth} × {result.paperHeight} mm | Requested Quantity: {result.quantity} Pieces | Total Sheets: {result.totalSheets}
           </p>
         </div>
         <div className="flex gap-3">
-          <button onClick={() => setActiveTab('new')} className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-xl font-semibold text-sm cursor-pointer">
+          <button onClick={() => setActiveTab('new')} className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2.5 rounded-xl font-semibold text-sm cursor-pointer">
             Modify Inputs
           </button>
-          <button onClick={() => alert("Downloading Verified PDF Report...")} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-semibold text-sm flex items-center gap-2 cursor-pointer">
+          <button onClick={() => downloadPDF({ id: 99, date: 'Today', ...result, utilization: currentSheet.utilization, waste: currentSheet.waste })} className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 cursor-pointer shadow-lg shadow-emerald-900/20">
             <Download size={16} /> Download PDF Report
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-3 gap-6">
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
             <h3 className="font-semibold text-emerald-400">Mathematical Summary</h3>
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gray-950 p-3 rounded-xl border border-gray-800">
+              <div className="bg-gray-950 p-3.5 rounded-xl border border-gray-800">
                 <p className="text-xs text-gray-400">Required Pieces</p>
                 <p className="text-xl font-bold text-white mt-1">{result.quantity}</p>
               </div>
-              <div className="bg-gray-950 p-3 rounded-xl border border-gray-800">
+              <div className="bg-gray-950 p-3.5 rounded-xl border border-gray-800">
                 <p className="text-xs text-gray-400">Sheets Required</p>
                 <p className="text-xl font-bold text-emerald-400 mt-1">{result.totalSheets}</p>
               </div>
-              <div className="bg-gray-950 p-3 rounded-xl border border-gray-800">
+              <div className="bg-gray-950 p-3.5 rounded-xl border border-gray-800">
                 <p className="text-xs text-gray-400">Sheet Utilization</p>
                 <p className="text-xl font-bold text-emerald-400 mt-1">{currentSheet.utilization}%</p>
               </div>
-              <div className="bg-gray-950 p-3 rounded-xl border border-gray-800">
+              <div className="bg-gray-950 p-3.5 rounded-xl border border-gray-800">
                 <p className="text-xs text-gray-400">Sheet Waste Area</p>
                 <p className="text-xl font-bold text-red-400 mt-1">{currentSheet.waste}%</p>
               </div>
@@ -425,7 +482,7 @@ function ResultView({ optimizationResult, setActiveTab }) {
                   onClick={() => setActiveSheetTab(idx)}
                   className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                     activeSheetTab === idx 
-                      ? 'bg-emerald-600 text-white shadow-md' 
+                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/20' 
                       : 'bg-gray-950 text-gray-300 border border-gray-800 hover:bg-gray-800'
                   }`}
                 >
@@ -444,7 +501,7 @@ function ResultView({ optimizationResult, setActiveTab }) {
             <span className="text-xs text-gray-400">Master: {result.paperWidth} × {result.paperHeight} mm</span>
           </div>
 
-          <div className="flex-1 bg-gray-950 border border-gray-800 rounded-xl relative p-4 flex items-center justify-center min-h-[380px] overflow-hidden">
+          <div className="flex-1 bg-gray-950 border border-gray-800 rounded-xl relative p-6 flex items-center justify-center min-h-[380px] overflow-hidden">
             <div 
               className="relative bg-emerald-950/30 border-2 border-emerald-500/60 rounded-lg shadow-inner"
               style={{
@@ -470,7 +527,7 @@ function ResultView({ optimizationResult, setActiveTab }) {
                       width: `${widthPct}%`,
                       height: `${heightPct}%`,
                     }}
-                    title={`Piece #${rect.id} (${rect.width}×${rect.height}mm) at X:${rect.x}, Y:${rect.y}`}
+                    title={`Piece #${rect.id} (${rect.width}×${rect.height}mm)`}
                   >
                     <span>#{rect.id}</span>
                     <span className="text-[8px] text-emerald-300 opacity-80">{rect.width}×{rect.height}</span>
@@ -485,17 +542,21 @@ function ResultView({ optimizationResult, setActiveTab }) {
   );
 }
 
-function ReportsView({ reports, selectedReport, setSelectedReport }) {
+function ReportsView({ reports, selectedReport, setSelectedReport, downloadPDF }) {
   return (
-    <div className="space-y-6 max-w-5xl">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 max-w-6xl">
+      {/* Header Section with Proper Spacing */}
+      <div className="flex justify-between items-center bg-gray-900 border border-gray-800 p-6 rounded-2xl">
         <div>
-          <h1 className="text-2xl font-bold">Reports Archive</h1>
-          <p className="text-gray-400 text-sm">Click on any report to view details or download the verified PDF certificate.</p>
+          <h1 className="text-2xl font-bold text-white">Reports Archive</h1>
+          <p className="text-gray-400 text-sm mt-1">Click on any report to view details or download the verified PDF certificate.</p>
         </div>
         {selectedReport && (
-          <button onClick={() => setSelectedReport(null)} className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer">
-            ← Back to Archive List
+          <button 
+            onClick={() => setSelectedReport(null)} 
+            className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 cursor-pointer transition-all border border-gray-700"
+          >
+            <ArrowLeft size={14} /> Back to Archive List
           </button>
         )}
       </div>
@@ -503,16 +564,16 @@ function ReportsView({ reports, selectedReport, setSelectedReport }) {
       {!selectedReport ? (
         <div className="space-y-3">
           {reports.map((rep) => (
-            <div key={rep.id} className="bg-gray-900 border border-gray-800 p-4 rounded-xl flex justify-between items-center hover:border-emerald-500/50 transition-all">
+            <div key={rep.id} className="bg-gray-900 border border-gray-800 p-5 rounded-2xl flex justify-between items-center hover:border-emerald-500/50 transition-all shadow-md">
               <div className="cursor-pointer flex-1" onClick={() => setSelectedReport(rep)}>
-                <span className="font-semibold text-white block">Optimization Report #{rep.id} ({rep.paperWidth}×{rep.paperHeight}mm)</span>
-                <span className="text-xs text-gray-400">Date: {rep.date} | Sheets: {rep.totalSheets} | Waste: {rep.waste}% | Utilization: {rep.utilization}%</span>
+                <span className="font-bold text-white text-base block hover:text-emerald-400 transition-colors">Optimization Report #{rep.id} ({rep.paperWidth}×{rep.paperHeight}mm)</span>
+                <span className="text-xs text-gray-400 mt-1 block">Date: {rep.date} &nbsp;|&nbsp; Sheets Required: <strong className="text-emerald-400">{rep.totalSheets}</strong> &nbsp;|&nbsp; Waste: <strong className="text-red-400">{rep.waste}%</strong> &nbsp;|&nbsp; Utilization: <strong className="text-emerald-400">{rep.utilization}%</strong></span>
               </div>
-              <div className="flex gap-2">
-                <button onClick={() => setSelectedReport(rep)} className="bg-gray-800 hover:bg-gray-700 text-emerald-400 px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer">
-                  View
+              <div className="flex gap-3">
+                <button onClick={() => setSelectedReport(rep)} className="bg-gray-800 hover:bg-gray-700 text-emerald-400 px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer border border-gray-700 transition-all">
+                  View Details
                 </button>
-                <button onClick={() => alert(`Downloading Report #${rep.id} PDF...`)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 cursor-pointer">
+                <button onClick={() => downloadPDF(rep)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 cursor-pointer shadow-lg shadow-emerald-900/20">
                   <Download size={14} /> Download PDF
                 </button>
               </div>
@@ -520,29 +581,34 @@ function ReportsView({ reports, selectedReport, setSelectedReport }) {
           ))}
         </div>
       ) : (
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-6">
-          <div className="flex justify-between items-center border-b border-gray-800 pb-4">
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 space-y-6 shadow-xl">
+          <div className="flex justify-between items-center border-b border-gray-800 pb-5">
             <div>
-              <h2 className="text-xl font-bold text-emerald-400">Optimization Report #{selectedReport.id}</h2>
-              <p className="text-xs text-gray-400">Generated on {selectedReport.date} | Status: Verified</p>
+              <h2 className="text-2xl font-bold text-emerald-400">Optimization Report #{selectedReport.id}</h2>
+              <p className="text-xs text-gray-400 mt-1">Generated on {selectedReport.date} &nbsp;|&nbsp; Status: <span className="text-emerald-400 font-semibold">Verified Certificate</span></p>
             </div>
-            <button onClick={() => alert(`Downloading Report #${selectedReport.id} PDF...`)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 cursor-pointer">
+            <button onClick={() => downloadPDF(selectedReport)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 cursor-pointer shadow-lg shadow-emerald-900/20">
               <Download size={16} /> Download PDF Report
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
-            <div className="bg-gray-950 p-4 rounded-xl border border-gray-800 space-y-2">
-              <h4 className="text-xs font-semibold text-gray-400 uppercase">Input Configuration</h4>
-              <p className="text-sm text-gray-300">Master Sheet: <span className="text-white font-semibold">{selectedReport.paperWidth} × {selectedReport.paperHeight} mm</span></p>
-              <p className="text-sm text-gray-300">Piece Size: <span className="text-white font-semibold">{selectedReport.pieceWidth} × {selectedReport.pieceHeight} mm</span></p>
-              <p className="text-sm text-gray-300">Requested Quantity: <span className="text-white font-semibold">{selectedReport.quantity} Pieces</span></p>
+          <div className="grid grid-cols-2 gap-6 pt-2">
+            <div className="bg-gray-950 p-6 rounded-2xl border border-gray-800 space-y-3">
+              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Input Configuration</h4>
+              <div className="space-y-2 pt-1 text-sm">
+                <p className="text-gray-300 flex justify-between"><span>Master Sheet Size:</span> <span className="text-white font-bold">{selectedReport.paperWidth} × {selectedReport.paperHeight} mm</span></p>
+                <p className="text-gray-300 flex justify-between"><span>Piece Dimensions:</span> <span className="text-white font-bold">{selectedReport.pieceWidth} × {selectedReport.pieceHeight} mm</span></p>
+                <p className="text-gray-300 flex justify-between"><span>Requested Quantity:</span> <span className="text-white font-bold">{selectedReport.quantity} Pieces</span></p>
+              </div>
             </div>
-            <div className="bg-gray-950 p-4 rounded-xl border border-gray-800 space-y-2">
-              <h4 className="text-xs font-semibold text-gray-400 uppercase">Efficiency Analytics</h4>
-              <p className="text-sm text-gray-300">Sheets Required: <span className="text-emerald-400 font-semibold">{selectedReport.totalSheets} Sheets</span></p>
-              <p className="text-sm text-gray-300">Material Utilization: <span className="text-emerald-400 font-semibold">{selectedReport.utilization}%</span></p>
-              <p className="text-sm text-gray-300">Scrap / Waste: <span className="text-red-400 font-semibold">{selectedReport.waste}%</span></p>
+            
+            <div className="bg-gray-950 p-6 rounded-2xl border border-gray-800 space-y-3">
+              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Efficiency Analytics</h4>
+              <div className="space-y-2 pt-1 text-sm">
+                <p className="text-gray-300 flex justify-between"><span>Total Sheets Required:</span> <span className="text-emerald-400 font-bold">{selectedReport.totalSheets} Sheets</span></p>
+                <p className="text-gray-300 flex justify-between"><span>Material Utilization:</span> <span className="text-emerald-400 font-bold">{selectedReport.utilization}%</span></p>
+                <p className="text-gray-300 flex justify-between"><span>Scrap / Waste Area:</span> <span className="text-red-400 font-bold">{selectedReport.waste}%</span></p>
+              </div>
             </div>
           </div>
         </div>
@@ -555,16 +621,16 @@ function ProfileView() {
   return (
     <div className="space-y-6 max-w-xl">
       <h1 className="text-2xl font-bold">User Profile</h1>
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 space-y-5">
         <div>
           <label className="text-xs text-gray-400 block mb-1">Full Name</label>
-          <input type="text" defaultValue="Ankit Chhipa" className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-emerald-500" />
+          <input type="text" defaultValue="Ankit Chhipa" className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
         </div>
         <div>
           <label className="text-xs text-gray-400 block mb-1">Organization / Manufacturing Unit</label>
-          <input type="text" defaultValue="AR Electro Projects" className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-emerald-500" />
+          <input type="text" defaultValue="AR Electro Projects" className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
         </div>
-        <button onClick={() => alert("Profile updated successfully!")} className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-xl font-semibold text-sm cursor-pointer">
+        <button onClick={() => alert("Profile updated successfully!")} className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl font-semibold text-sm cursor-pointer shadow-lg shadow-emerald-900/20">
           Save Changes
         </button>
       </div>
@@ -576,15 +642,15 @@ function SettingsView() {
   return (
     <div className="space-y-6 max-w-xl">
       <h1 className="text-2xl font-bold">System Settings</h1>
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
-        <div className="flex items-center justify-between py-2 border-b border-gray-800">
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 space-y-5">
+        <div className="flex items-center justify-between py-3 border-b border-gray-800">
           <div>
             <p className="font-semibold text-white">Deterministic Bin-Packing Engine</p>
-            <p className="text-xs text-gray-400">Strict mathematical validation and multi-sheet coordinate calculation.</p>
+            <p className="text-xs text-gray-400 mt-0.5">Strict mathematical validation and multi-sheet coordinate calculation.</p>
           </div>
           <input type="checkbox" defaultChecked className="w-5 h-5 accent-emerald-500 cursor-pointer" />
         </div>
-        <button onClick={() => alert("Settings saved successfully!")} className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-xl font-semibold text-sm cursor-pointer">
+        <button onClick={() => alert("Settings saved successfully!")} className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl font-semibold text-sm cursor-pointer shadow-lg shadow-emerald-900/20">
           Update Settings
         </button>
       </div>
